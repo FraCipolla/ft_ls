@@ -4,6 +4,8 @@
 #include <dirent.h>
 #include <errno.h>
 #include <string.h>
+#include <stdlib.h>
+#include "dir_list.h"
 
 enum flags {
     l = 1 << 0,
@@ -61,15 +63,12 @@ int check_flags(char *s, int *flags)
     }
 }
 
-void print_ordered_dir(DIR *dir)
+void print_unordered_dir(DIR *dir)
 {
-    while (1) {
-        struct dirent *entry = readdir(dir);
-        if (!entry) {
-            break;
-        }
-        printf("%s  ", entry->d_name);
-    }
+    t_dir_list *list = f_init(dir);
+    // print_dir_list(list);
+    print_rev_dir_list(list);
+    free_dir_list(list);
     printf("\n");
 }
 
@@ -81,13 +80,13 @@ void no_flags(char** argv)
             if (!dir) {
                 printf("ls: cannot access '%s': %s\n", *argv, strerror(errno));
             } else {
-                print_ordered_dir(dir);
+                print_unordered_dir(dir);
             }
         }
         return;
     } 
     DIR *dir = opendir(".");
-    print_ordered_dir(dir);
+    print_unordered_dir(dir);
 }
 
 int main(int argc, char *argv[]) {
