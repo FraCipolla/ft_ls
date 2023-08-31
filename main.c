@@ -2,6 +2,8 @@
 #include <stdio.h>
 #include <sys/types.h>
 #include <dirent.h>
+#include <errno.h>
+#include <string.h>
 
 enum flags {
     l = 1 << 0,
@@ -15,7 +17,7 @@ enum flags {
     d = 1 << 8,
 };
 
-int check_flags(char *s)
+int check_flags(char *s, int *flags)
 {
     if (*s == '-') {
         s++;
@@ -23,67 +25,83 @@ int check_flags(char *s)
         return 0;
     }
 
-    int flags = 0;
     while (*s) {
         switch (*s) {
             case 'l':
-                flags |= l;
+                *flags |= l;
                 break;
             case 'R':
-                flags |= R;
+                *flags |= R;
                 break;
             case 'a':
-                flags |= a;
+                *flags |= a;
                 break;
             case 'r':
-                flags |= r;
+                *flags |= r;
                 break;
             case 't':
-                flags |= t;
+                *flags |= t;
                 break;
             case 'u':
-                flags |= u;
+                *flags |= u;
                 break;
             case 'f':
-                flags |= f;
+                *flags |= f;
                 break;
             case 'g':
-                flags |= g;
+                *flags |= g;
                 break;
             case 'd':
-                flags |= d;
+                *flags |= d;
                 break;
             default:
                 return 0;
         }
         s++;
     }
-    return flags;
 }
 
-void no_flags()
+void print_ordered_dir(DIR *dir)
 {
-    DIR *dir = opendir(".");
     while (1) {
         struct dirent *entry = readdir(dir);
         if (!entry) {
             break;
         }
-        if (entry->d_name[0] != '.')
-            printf("%s  ", entry->d_name);
+        printf("%s  ", entry->d_name);
     }
     printf("\n");
+}
+
+void no_flags(char** argv)
+{
+    while (++argv && *argv) {
+        if (*argv[0] != '-') {
+            DIR *dir = opendir(*argv);
+            if (!dir) {
+                printf("ls: cannot access '%s': %s\n", *argv, strerror(errno));
+            } else {
+                print_ordered_dir(dir);
+            }
+        }
+        return;
+    } 
+    DIR *dir = opendir(".");
+    print_ordered_dir(dir);
 }
 
 int main(int argc, char *argv[]) {
 
     int flags = 0;
-    if (argc > 2) {
-        flags = check_flags(argv[1]);
+    char **tmp = argv;
+    if (argc >= 2) {
+        while (argv[1]) {
+            check_flags(argv[1], &flags);
+            argv++;
+        }
         printf("flags: %d\n", flags);
-    } else {
-        no_flags();
     }
+    no_flags(tmp);
 
     return 0;
 }
