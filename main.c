@@ -107,7 +107,6 @@ int main(int argc, char *argv[]) {
             j++;
         }
     }
-    
     no_flags(argv);
     return 0;
 }
