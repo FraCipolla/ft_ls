@@ -18,7 +18,7 @@ typedef struct s_dir_list {
 void print_dir_list(t_dir_list *dir_list);
 void print_rev_dir_list(t_dir_list *list);
 void free_dir_list(t_dir_list *dir_list);
-t_dir_list *init(DIR *dir);
+t_dir_list *dir_init(DIR *dir);
 
 /* Utility */
 char** to_arr(t_dir_list *list);

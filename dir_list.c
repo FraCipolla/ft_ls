@@ -29,7 +29,7 @@ void free_dir_list(t_dir_list *list)
     }
 }
 
-t_dir_list *init(DIR *dir)
+t_dir_list *dir_init(DIR *dir)
 {
     t_dir_list *list = NULL;
     struct dirent *entry;

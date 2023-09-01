@@ -8,15 +8,15 @@
 #include "dir_list.h"
 
 enum flags {
-    l = 1 << 0,
-    R = 1 << 1,
-    a = 1 << 2,
-    r = 1 << 3,
-    t = 1 << 4,
-    u = 1 << 5,
-    f = 1 << 6,
-    g = 1 << 7,
-    d = 1 << 8,
+    l = 1 << 0, // 1
+    R = 1 << 1, // 2
+    a = 1 << 2, // 4
+    r = 1 << 3, // 8
+    t = 1 << 4, // 16
+    u = 1 << 5, // 32
+    f = 1 << 6, // 64
+    g = 1 << 7, // 128
+    d = 1 << 8, // 256
 };
 
 int check_flags(char *s, int *flags)
@@ -66,46 +66,48 @@ int check_flags(char *s, int *flags)
 
 void print_unordered_dir(DIR *dir)
 {
-    t_dir_list *list = init(dir);
-    // print_dir_list(list);
+    t_dir_list *list = dir_init(dir);
     char** dir_arr = sort_dir_list(list);
     for (unsigned int i = 0; i < list->size; i++) {
         printf("%s  ", dir_arr[i]);
     }
-    // print_rev_dir_list(list);
     free_dir_list(list);
     printf("\n");
 }
 
 void no_flags(char** argv)
 {
-    while (++argv && *argv) {
-        if (*argv[0] != '-') {
-            DIR *dir = opendir(*argv);
-            if (!dir) {
-                printf("ls: cannot access '%s': %s\n", *argv, strerror(errno));
-            } else {
-                print_unordered_dir(dir);
-            }
+    while (argv && *argv) {
+        DIR *dir = opendir(*argv);
+        if (!dir) {
+            printf("%s  ", *argv);
+        } else {
+            print_unordered_dir(dir);
         }
-        return;
-    } 
-    DIR *dir = opendir(".");
-    print_unordered_dir(dir);
+        argv++;
+    }
+    printf("\n");
 }
 
 int main(int argc, char *argv[]) {
 
     int flags = 0;
-    char **tmp = argv;
+    int i = 1, j = 0;
+    argv[0] = ".";
     if (argc >= 2) {
-        while (argv[1]) {
-            check_flags(argv[1], &flags);
-            argv++;
+        while (argv[i]) {
+            if (check_flags(argv[i], &flags) == 0) {
+                argv[j] = argv[i];
+                j++;
+            }
+            i++;
         }
-        printf("flags: %d\n", flags);
+        while (argv[j]) {
+            argv[j] = NULL;
+            j++;
+        }
     }
-    no_flags(tmp);
-
+    
+    no_flags(argv);
     return 0;
 }
