@@ -61,13 +61,18 @@ int check_flags(char *s, int *flags)
         }
         s++;
     }
+    return 1;
 }
 
 void print_unordered_dir(DIR *dir)
 {
-    t_dir_list *list = f_init(dir);
+    t_dir_list *list = init(dir);
     // print_dir_list(list);
-    print_rev_dir_list(list);
+    char** dir_arr = sort_dir_list(list);
+    for (unsigned int i = 0; i < list->size; i++) {
+        printf("%s  ", dir_arr[i]);
+    }
+    // print_rev_dir_list(list);
     free_dir_list(list);
     printf("\n");
 }
