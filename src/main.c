@@ -75,36 +75,70 @@ void print_unordered_dir(DIR *dir)
     free_dir_list(list);
 }
 
-void no_flags(char** argv)
+void no_flags_no_path(char* argv)
 {
-    while (argv && *argv) {
-        DIR *dir = opendir(*argv);
-        if (!dir) {
-            printf("%s  ", *argv);
-        } else {
-            print_unordered_dir(dir);
-        }
-        argv++;
+    DIR *dir = opendir(argv);
+    if (!dir) {
+        printf("%s  ", argv);
+    } else {
+        print_unordered_dir(dir);
     }
     printf("\n");
 }
 
-int main(int argc, char *argv[]) {
+void no_flags_path(char** argv)
+{
+    if (*argv == NULL) {
+        return;
+    }
+    no_flags_path(argv + 1);
+    printf("%s:\n", *argv);
+    DIR *dir = opendir(*argv);
+    if (!dir) {
+        printf("%s  ", *argv);
+    } else {
+        print_unordered_dir(dir);
+    }
+    printf("\n");
+}
 
+void choose_path(char** argv, int flags)
+{
+    int i = (!(flags == 0) + (!(*argv == NULL) * 2));
+    /* case: 1 flags no path
+       case: 2 no flags with paths
+       case: 3 flags with paths */
+    switch (i) {
+        case 2:
+            no_flags_path(argv);
+            break;
+        default:
+            no_flags_no_path(".");
+            break;
+    }
+}
+
+int main(int argc, char *argv[])
+{
+    if (argc == 1) {
+        no_flags_no_path(".");
+        return 0;
+    }
     int flags = 0;
-    int i = 1, j = 0;
-    argv[0] = ".";
-    if (argc >= 2) {
-        while (argv[i]) {
-            if (check_flags(argv[i], &flags) == 0) {
-                argv[j++] = argv[i];
-            }
-            i++;
-        }
-        while (argv[j]) {
-            argv[j++] = NULL;
+    int i = 1;
+    while (argv[i]) {
+        check_flags(argv[i], &flags);
+        i++;
+    }
+    while (--i > 0) {
+        if (!check_flags(argv[i], &flags)) {
+            if (i != argc - 1)
+                printf("\n");
+            printf("%s:\n", argv[i]);
+            no_flags_no_path(argv[i]);
+
         }
     }
-    no_flags(argv);
+    // choose_path(argv + 1, flags);
     return 0;
 }
