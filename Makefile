@@ -1,6 +1,7 @@
 NAME=ls
 SRC=main.c dir_list.c
-OBJ=$(SRC:.c=.o)
+SRCDIR=src
+OBJ=$(SRC:%.c=$(SRCDIR)/%.o)
 CC=gcc
 CFLAGS=-Wall -Wextra -Werror
 

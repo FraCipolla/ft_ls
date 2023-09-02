@@ -5,7 +5,7 @@
 #include <errno.h>
 #include <string.h>
 #include <stdlib.h>
-#include "dir_list.h"
+#include "../include/dir_list.h"
 
 enum flags {
     l = 1 << 0, // 1
@@ -69,10 +69,10 @@ void print_unordered_dir(DIR *dir)
     t_dir_list *list = dir_init(dir);
     char** dir_arr = sort_dir_list(list);
     for (unsigned int i = 0; i < list->size; i++) {
-        printf("%s  ", dir_arr[i]);
+        if (dir_arr[i][0] != '.')
+            printf("%s  ", dir_arr[i]);
     }
     free_dir_list(list);
-    printf("\n");
 }
 
 void no_flags(char** argv)
@@ -97,14 +97,12 @@ int main(int argc, char *argv[]) {
     if (argc >= 2) {
         while (argv[i]) {
             if (check_flags(argv[i], &flags) == 0) {
-                argv[j] = argv[i];
-                j++;
+                argv[j++] = argv[i];
             }
             i++;
         }
         while (argv[j]) {
-            argv[j] = NULL;
-            j++;
+            argv[j++] = NULL;
         }
     }
     no_flags(argv);

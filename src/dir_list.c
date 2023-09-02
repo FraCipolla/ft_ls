@@ -1,4 +1,4 @@
-#include "dir_list.h"
+#include "../include/dir_list.h"
 
 void print_dir_list(t_dir_list *list)
 {
