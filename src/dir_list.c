@@ -57,7 +57,7 @@ t_dir_list *dir_init(DIR *dir)
     return list;
 }
 
-char** to_arr(t_dir_list *list)
+char** dir_to_arr(t_dir_list *list)
 {
     char **arr = malloc(sizeof(char*) * list->size);
     int i = 0;
@@ -72,7 +72,7 @@ char** to_arr(t_dir_list *list)
 
 char** sort_dir_list(t_dir_list *list)
 {
-    char **arr = to_arr(list);
+    char **arr = dir_to_arr(list);
     unsigned int i = 0;
     unsigned int j = 0;
     char *tmp;

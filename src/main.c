@@ -102,43 +102,35 @@ void no_flags_path(char** argv)
     printf("\n");
 }
 
-void choose_path(char** argv, int flags)
-{
-    int i = (!(flags == 0) + (!(*argv == NULL) * 2));
-    /* case: 1 flags no path
-       case: 2 no flags with paths
-       case: 3 flags with paths */
-    switch (i) {
-        case 2:
-            no_flags_path(argv);
-            break;
-        default:
-            no_flags_no_path(".");
-            break;
-    }
-}
+// void choose_path(char** argv, int flags)
+// {
+//     int i = (!(flags == 0) + (!(*argv == NULL) * 2));
+//     /* case: 1 flags no path
+//        case: 2 no flags with paths
+//        case: 3 flags with paths */
+//     switch (i) {
+//         case 2:
+//             no_flags_path(argv);
+//             break;
+//         default:
+//             no_flags_no_path(".");
+//             break;
+//     }
+// }
 
 int main(int argc, char *argv[])
 {
-    if (argc == 1) {
-        no_flags_no_path(".");
-        return 0;
-    }
     int flags = 0;
-    int i = 1;
-    while (argv[i]) {
-        check_flags(argv[i], &flags);
-        i++;
-    }
-    while (--i > 0) {
+    int i = 0, j = 0, k = 0;
+    while (argv[++i]) {
         if (!check_flags(argv[i], &flags)) {
-            if (i != argc - 1)
-                printf("\n");
-            printf("%s:\n", argv[i]);
-            no_flags_no_path(argv[i]);
-
+            argv[j++] = argv[i];
+            if (opendir(argv[i]))
+                k++;
         }
     }
-    // choose_path(argv + 1, flags);
+    if (j == 0)
+        argv[j++] = ".";
+
     return 0;
 }

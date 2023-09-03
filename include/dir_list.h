@@ -15,13 +15,18 @@ typedef struct s_dir_list {
     unsigned int size;
 }   t_dir_list;
 
+// typedef struct size_list {
+//     unsigned int size;
+//     struct s_dir_list *list;
+// }   t_size_list;
+
 void print_dir_list(t_dir_list *dir_list);
 void print_rev_dir_list(t_dir_list *list);
 void free_dir_list(t_dir_list *dir_list);
 t_dir_list *dir_init(DIR *dir);
 
 /* Utility */
-char** to_arr(t_dir_list *list);
+char** dir_to_arr(t_dir_list *list);
 char** sort_dir_list(t_dir_list *list);
 
 #endif
