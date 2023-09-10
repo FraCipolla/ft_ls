@@ -59,7 +59,7 @@ t_dir_list *dir_init(DIR *dir)
 
 char** dir_to_arr(t_dir_list *list)
 {
-    char **arr = malloc(sizeof(char*) * list->size);
+    char **arr = malloc(sizeof(char*) * list->size + 1);
     int i = 0;
     t_dir_list *head = list->head;
     while (head) {
@@ -67,6 +67,7 @@ char** dir_to_arr(t_dir_list *list)
         head = head->next;
         i++;
     }
+    arr[i] = NULL;
     return arr;
 }
 
@@ -80,6 +81,32 @@ char** sort_dir_list(t_dir_list *list)
         j = i + 1;
         while (j < list->size) {
             if (strcmp(arr[i], arr[j]) > 0) {
+                tmp = arr[i];
+                arr[i] = arr[j];
+                arr[j] = tmp;
+            }
+            j++;
+        }
+        i++;
+    }
+    return arr;
+}
+
+char** sort_dir_by_time(t_dir_list *list)
+{
+    char **arr = dir_to_arr(list);
+    struct stat *buf = malloc(sizeof(struct stat));
+    unsigned int i = 0;
+    unsigned int j = 0;
+    char *tmp;
+    while (i < list->size) {
+        j = i + 1;
+        while (j < list->size) {
+            stat(arr[i], buf);
+            time_t time1 = buf->st_mtime;
+            stat(arr[j], buf);
+            time_t time2 = buf->st_mtime;
+            if (time1 < time2) {
                 tmp = arr[i];
                 arr[i] = arr[j];
                 arr[j] = tmp;

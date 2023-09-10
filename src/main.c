@@ -5,7 +5,10 @@
 #include <errno.h>
 #include <string.h>
 #include <stdlib.h>
+#include <sys/stat.h>
+#include <time.h>
 #include "../include/dir_list.h"
+#include "../include/utils.h"
 
 enum flags {
     l = 1 << 0, // 1
@@ -61,6 +64,7 @@ int check_flags(char *s, int *flags)
         }
         s++;
     }
+
     return 1;
 }
 
@@ -75,62 +79,35 @@ void print_unordered_dir(DIR *dir)
     free_dir_list(list);
 }
 
-void no_flags_no_path(char* argv)
+void open_dir(char **argv, int flags)
 {
-    DIR *dir = opendir(argv);
-    if (!dir) {
-        printf("%s  ", argv);
-    } else {
-        print_unordered_dir(dir);
+
+    char** dir_arr = NULL;
+    if (strcmp(*argv, ".") == 0) {
+        DIR *dir = opendir(*argv);
+        if (flags & t) {
+            dir_arr = sort_dir_by_time(dir_init(dir));
+        } else {
+            dir_arr = sort_dir_list(dir_init(dir));
+        }
     }
+    print_array(dir_arr);
     printf("\n");
 }
-
-void no_flags_path(char** argv)
-{
-    if (*argv == NULL) {
-        return;
-    }
-    no_flags_path(argv + 1);
-    printf("%s:\n", *argv);
-    DIR *dir = opendir(*argv);
-    if (!dir) {
-        printf("%s  ", *argv);
-    } else {
-        print_unordered_dir(dir);
-    }
-    printf("\n");
-}
-
-// void choose_path(char** argv, int flags)
-// {
-//     int i = (!(flags == 0) + (!(*argv == NULL) * 2));
-//     /* case: 1 flags no path
-//        case: 2 no flags with paths
-//        case: 3 flags with paths */
-//     switch (i) {
-//         case 2:
-//             no_flags_path(argv);
-//             break;
-//         default:
-//             no_flags_no_path(".");
-//             break;
-//     }
-// }
 
 int main(int argc, char *argv[])
 {
     int flags = 0;
-    int i = 0, j = 0, k = 0;
+    int i = 0, j = 0;
     while (argv[++i]) {
         if (!check_flags(argv[i], &flags)) {
             argv[j++] = argv[i];
-            if (opendir(argv[i]))
-                k++;
         }
     }
     if (j == 0)
         argv[j++] = ".";
-
+    while (j < argc)
+        argv[j++] = NULL;
+    open_dir(argv, flags);
     return 0;
 }

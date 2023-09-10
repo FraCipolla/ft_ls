@@ -6,6 +6,8 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <time.h>
+#include <sys/stat.h>
 
 typedef struct s_dir_list {
     struct dirent *dir;
@@ -28,5 +30,6 @@ t_dir_list *dir_init(DIR *dir);
 /* Utility */
 char** dir_to_arr(t_dir_list *list);
 char** sort_dir_list(t_dir_list *list);
+char** sort_dir_by_time(t_dir_list *list);
 
 #endif
