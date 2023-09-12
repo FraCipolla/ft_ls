@@ -10,18 +10,6 @@
 #include "../include/dir_list.h"
 #include "../include/utils.h"
 
-enum flags {
-    l = 1 << 0, // 1
-    R = 1 << 1, // 2
-    a = 1 << 2, // 4
-    r = 1 << 3, // 8
-    t = 1 << 4, // 16
-    u = 1 << 5, // 32
-    f = 1 << 6, // 64
-    g = 1 << 7, // 128
-    d = 1 << 8, // 256
-};
-
 int check_flags(char *s, int *flags)
 {
     if (*s == '-') {
@@ -68,30 +56,19 @@ int check_flags(char *s, int *flags)
     return 1;
 }
 
-void print_unordered_dir(DIR *dir)
-{
-    t_dir_list *list = dir_init(dir);
-    char** dir_arr = sort_dir_list(list);
-    for (unsigned int i = 0; i < list->size; i++) {
-        if (dir_arr[i][0] != '.')
-            printf("%s  ", dir_arr[i]);
-    }
-    free_dir_list(list);
-}
-
 void open_dir(char **argv, int flags)
 {
-
-    char** dir_arr = NULL;
     if (strcmp(*argv, ".") == 0) {
         DIR *dir = opendir(*argv);
+        t_sized_list *list = dir_init(dir, flags);
         if (flags & t) {
-            dir_arr = sort_dir_by_time(dir_init(dir));
+            // sort_dir_by_time(list);
         } else {
-            dir_arr = sort_dir_list(dir_init(dir));
+            // sort_asc_order(dir_init(dir, flags));
+            print_dir_list(list);
+            free_sized_list(list);
         }
     }
-    print_array(dir_arr);
     printf("\n");
 }
 

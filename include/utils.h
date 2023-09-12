@@ -4,42 +4,24 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/stat.h>
+#include <pwd.h>
+#include <grp.h>
 
-
-void print_permission(char* file);
-
-void print_array(char** arr)
-{
-    int i = 0;
-    while (arr[i] != NULL)
-    {
-        print_permission(arr[i]);
-        printf("%s\n", arr[i]);
-        i++;
-    }
-    printf("\n");
+enum flags {
+    l = 1 << 0, // 1
+    R = 1 << 1, // 2
+    a = 1 << 2, // 4
+    r = 1 << 3, // 8
+    t = 1 << 4, // 16
+    u = 1 << 5, // 32
+    f = 1 << 6, // 64
+    g = 1 << 7, // 128
+    d = 1 << 8, // 256
 };
 
-void print_permission(char* file)
-{
-    struct stat file_stat;
-    int ret = stat(file, &file_stat);
-    if (ret == -1)
-    {
-        perror("stat");
-        exit(EXIT_FAILURE);
-    }
-    S_ISDIR(file_stat.st_mode) ? printf("d") : printf("-");
-    file_stat.st_mode & S_IRUSR ? printf("r") : printf("-");
-    file_stat.st_mode & S_IWUSR ? printf("w") : printf("-");
-    file_stat.st_mode & S_IXUSR ? printf("x") : printf("-");
-    file_stat.st_mode & S_IRGRP ? printf("r") : printf("-");
-    file_stat.st_mode & S_IWGRP ? printf("w") : printf("-");
-    file_stat.st_mode & S_IXGRP ? printf("x") : printf("-");
-    file_stat.st_mode & S_IROTH ? printf("r") : printf("-");
-    file_stat.st_mode & S_IWOTH ? printf("w") : printf("-");
-    file_stat.st_mode & S_IXOTH ? printf("x") : printf("-");
-    printf(" %ld ", file_stat.st_nlink);
-}
+void print_permission(char* file);
+void print_array(char** arr);
+void print_l(char** arr);
+void print_permission(char* file);
 
 #endif

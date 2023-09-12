@@ -11,25 +11,27 @@
 
 typedef struct s_dir_list {
     struct dirent *dir;
-    struct s_dir_list *head;
+    struct stat *stat;
     struct s_dir_list *prev;
     struct s_dir_list *next;
-    unsigned int size;
 }   t_dir_list;
 
-// typedef struct size_list {
-//     unsigned int size;
-//     struct s_dir_list *list;
-// }   t_size_list;
+typedef struct sized_list {
+    unsigned int list_size;
+    unsigned int max_st_nlink;
+    unsigned int max_size;
+    struct s_dir_list *head;
+    struct s_dir_list *tail;
+}   t_sized_list;
 
-void print_dir_list(t_dir_list *dir_list);
-void print_rev_dir_list(t_dir_list *list);
-void free_dir_list(t_dir_list *dir_list);
-t_dir_list *dir_init(DIR *dir);
+void print_dir_list(t_sized_list *dir_list);
+void print_rev_dir_list(t_sized_list *list);
+void free_sized_list(t_sized_list *list);
+t_sized_list *dir_init(DIR *dir, int flags);
 
 /* Utility */
-char** dir_to_arr(t_dir_list *list);
-char** sort_dir_list(t_dir_list *list);
-char** sort_dir_by_time(t_dir_list *list);
+void free_sized_list(t_sized_list *list);
+void sort_asc_order(t_sized_list *list);
+void sort_by_time(t_sized_list *list);
 
 #endif
