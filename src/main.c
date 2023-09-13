@@ -17,11 +17,11 @@ int check_flags(char *s, int *flags)
     } else {
         return 0;
     }
-
     while (*s) {
         switch (*s) {
             case 'l':
                 *flags |= l;
+                *flags &= ~f;
                 break;
             case 'R':
                 *flags |= R;
@@ -40,6 +40,8 @@ int check_flags(char *s, int *flags)
                 break;
             case 'f':
                 *flags |= f;
+                *flags |= a;
+                *flags &= ~l;
                 break;
             case 'g':
                 *flags |= g;
@@ -56,20 +58,25 @@ int check_flags(char *s, int *flags)
     return 1;
 }
 
-void open_dir(char **argv, int flags)
+void check_args(char **argv, int flags)
 {
     if (strcmp(*argv, ".") == 0) {
         DIR *dir = opendir(*argv);
         t_sized_list *list = dir_init(dir, flags);
         if (flags & t) {
-            // sort_dir_by_time(list);
+            sort_by_time(list);
         } else {
-            // sort_asc_order(dir_init(dir, flags));
-            print_dir_list(list);
-            free_sized_list(list);
+            sort_by_name(list);
         }
+        if (flags & r) {
+            print_rev_dir_list(list);
+        } else if (flags & l) {
+            print_dir_list_l(list);
+        } else {
+            print_dir_list(list);
+        }
+        free_sized_list(list);
     }
-    printf("\n");
 }
 
 int main(int argc, char *argv[])
@@ -85,6 +92,6 @@ int main(int argc, char *argv[])
         argv[j++] = ".";
     while (j < argc)
         argv[j++] = NULL;
-    open_dir(argv, flags);
+    check_args(argv, flags);
     return 0;
 }

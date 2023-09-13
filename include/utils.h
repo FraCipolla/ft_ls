@@ -19,9 +19,6 @@ enum flags {
     d = 1 << 8, // 256
 };
 
-void print_permission(char* file);
-void print_array(char** arr);
-void print_l(char** arr);
-void print_permission(char* file);
+void print_permission(mode_t stat);
 
 #endif
