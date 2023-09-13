@@ -33,5 +33,6 @@ void sort_by_time(t_sized_list *list);
 void print_dir_list(t_sized_list *dir_list);
 void print_rev_dir_list(t_sized_list *list);
 void print_dir_list_l(t_sized_list *list);
+void print_rev_dir_list_l(t_sized_list *list);
 
 #endif

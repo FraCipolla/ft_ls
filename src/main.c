@@ -69,7 +69,11 @@ void check_args(char **argv, int flags)
             sort_by_name(list);
         }
         if (flags & r) {
-            print_rev_dir_list(list);
+            if (flags & l) {
+                print_rev_dir_list_l(list);
+            } else {
+                print_rev_dir_list(list);
+            }
         } else if (flags & l) {
             print_dir_list_l(list);
         } else {

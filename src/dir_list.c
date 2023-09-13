@@ -56,7 +56,43 @@ void print_dir_list_l(t_sized_list *list)
         printf("%s\n", tmp->dir->d_name);
         tmp = tmp->next;
     }
-    printf("\n");
+}
+
+void print_rev_dir_list_l(t_sized_list *list)
+{
+    t_dir_list *tmp = list->tail;
+    unsigned int k = 1, n = list->max_st_nlink;
+    while (n /= 10) {
+        k++;
+    }
+    unsigned int s = list->max_size;
+    n = 1;
+    while (s /= 10) {
+        n++;
+    }
+    while (tmp) {
+        print_permission(tmp->stat->st_mode);
+        unsigned int i = 0, j = tmp->stat->st_nlink;
+        while (j /= 10)
+            i++;
+        while (i++ < k)
+            printf(" ");
+        printf("%ld ", tmp->stat->st_nlink);
+        struct passwd *pw = getpwuid(tmp->stat->st_uid);
+        struct group  *gr = getgrgid(tmp->stat->st_gid);
+        printf("%s %s", pw->pw_name, gr->gr_name);
+        i = 0, j = tmp->stat->st_size;
+        while (j /= 10)
+            i++;
+        while (i++ < n)
+            printf(" ");
+        printf("%ld ", tmp->stat->st_size);
+        char *time = ctime(&tmp->stat->st_mtime);
+        time[16] = '\0';
+        printf("%s ", time + 4);
+        printf("%s\n", tmp->dir->d_name);
+        tmp = tmp->prev;
+    }
 }
 
 void free_sized_list(t_sized_list *list)
@@ -101,8 +137,7 @@ t_sized_list *dir_init(DIR *dir, int flags)
             list = new;
             sized_list->head = list;
         } else {
-            if (!(flags & t) && !(flags & f))
-                new->prev = list;
+            new->prev = list;
             list->next = new;
             list = list->next;
         }
@@ -134,7 +169,6 @@ void sort_by_name(t_sized_list *list)
     }
 }
 
-// TODO: sort by time
 void sort_by_time(t_sized_list *list)
 {
     t_dir_list *tmp = list->head;
