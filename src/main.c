@@ -5,10 +5,12 @@
 #include <errno.h>
 #include <string.h>
 #include <stdlib.h>
-#include <sys/stat.h>
+#include <dirent.h>
 #include <time.h>
 #include "../include/dir_list.h"
 #include "../include/utils.h"
+
+void check_args(char **argv, int flags, int argc);
 
 int check_flags(char *s, int *flags)
 {
@@ -58,29 +60,79 @@ int check_flags(char *s, int *flags)
     return 1;
 }
 
-void check_args(char **argv, int flags)
+void print(t_sized_list *sized_list, int flags)
 {
-    if (strcmp(*argv, ".") == 0) {
-        DIR *dir = opendir(*argv);
-        t_sized_list *list = dir_init(dir, flags);
-        if (flags & t) {
-            sort_by_time(list);
-        } else {
-            sort_by_name(list);
-        }
-        if (flags & r) {
-            if (flags & l) {
-                print_rev_dir_list_l(list);
-            } else {
-                print_rev_dir_list(list);
-            }
-        } else if (flags & l) {
-            print_dir_list_l(list);
-        } else {
-            print_dir_list(list);
-        }
-        free_sized_list(list);
+    if (flags & t) {
+        sort_by_time(sized_list);
+    } else {
+        sort_by_name(sized_list);
     }
+    if (flags & r) {
+        if (flags & l) {
+            print_rev_dir_list_l(sized_list);
+        } else {
+            print_rev_dir_list(sized_list);
+        }
+    } else if (flags & l) {
+        print_dir_list_l(sized_list);
+    } else {
+        print_dir_list(sized_list);
+    }
+}
+
+void open_dir(char *path, int flags)
+{
+    DIR *dir = opendir(path);
+    if (!dir) {
+        perror("ls");
+        exit(errno);
+    }
+    t_sized_list *sized_list = dir_init(dir, flags);
+    print(sized_list, flags);
+    t_dir_list *list = sized_list->head;
+    if (flags & R) {
+        while (list) {
+            char *new_path = malloc(sizeof(char) * (strlen(path) + strlen(list->path) + 2));
+            strcpy(new_path, path);
+            strcat(new_path, "/");
+            strcat(new_path, list->path);
+            new_path[strlen(path) + strlen(list->path) + 1] = '\0';
+            DIR *dir = opendir(new_path);
+            if (dir) {
+                printf("\n%s:\n", new_path);
+                open_dir(new_path, flags);
+            }
+            free(new_path);
+            list = list->next;
+        }
+    }
+    closedir(dir);
+}
+
+void check_args(char **argv, int flags, int argc)
+{
+    char *path[argc];
+    t_sized_list *sized_list = malloc(sizeof(t_sized_list));
+    sized_list->list_size = 0;
+    sized_list->max_st_nlink = 0;
+    int i = 0;
+    while(*argv) {
+        DIR *dir = opendir(*argv);
+        if (!dir)
+            add_node(*argv, flags, sized_list);
+        else {
+            path[i++] = *argv;
+        }
+        argv++;
+    }
+    path[i] = NULL;
+    if (sized_list->list_size > 0)
+        print(sized_list, flags);
+    for (i = 0; path[i]; i++) {
+        printf("%s:\n", path[i]);
+        open_dir(path[i], flags);
+    }
+    free_sized_list(sized_list);
 }
 
 int main(int argc, char *argv[])
@@ -92,10 +144,15 @@ int main(int argc, char *argv[])
             argv[j++] = argv[i];
         }
     }
-    if (j == 0)
-        argv[j++] = ".";
-    while (j < argc)
-        argv[j++] = NULL;
-    check_args(argv, flags);
+    if (j == 0) {
+        if (flags & R) {
+            printf(".:\n");
+        }
+        open_dir(".", flags);
+    } else {
+        while (j < argc)
+            argv[j++] = NULL;
+        check_args(argv, flags, argc);
+    }
     return 0;
 }

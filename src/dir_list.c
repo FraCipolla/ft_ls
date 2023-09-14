@@ -5,7 +5,7 @@ void print_dir_list(t_sized_list *list)
 {
     t_dir_list *tmp = list->head;
     while (tmp) {
-        printf("%s  ", tmp->dir->d_name);
+        printf("%s  ", tmp->path);
         tmp = tmp->next;
     }
     printf("\n");
@@ -15,7 +15,7 @@ void print_rev_dir_list(t_sized_list *list)
 {
     t_dir_list *tmp = list->tail;
     while (tmp) {
-        printf("%s  ", tmp->dir->d_name);
+        printf("%s  ", tmp->path);
         tmp = tmp->prev;
     }
     printf("\n");
@@ -53,7 +53,7 @@ void print_dir_list_l(t_sized_list *list)
         char *time = ctime(&tmp->stat->st_mtime);
         time[16] = '\0';
         printf("%s ", time + 4);
-        printf("%s\n", tmp->dir->d_name);
+        printf("%s\n", tmp->path);
         tmp = tmp->next;
     }
 }
@@ -90,7 +90,7 @@ void print_rev_dir_list_l(t_sized_list *list)
         char *time = ctime(&tmp->stat->st_mtime);
         time[16] = '\0';
         printf("%s ", time + 4);
-        printf("%s\n", tmp->dir->d_name);
+        printf("%s\n", tmp->path);
         tmp = tmp->prev;
     }
 }
@@ -122,7 +122,7 @@ t_sized_list *dir_init(DIR *dir, int flags)
             continue;
         }
         t_dir_list *new = malloc(sizeof(t_dir_list));
-        new->dir = entry;
+        new->path = entry->d_name;
         new->prev = NULL;
         new->next = NULL;
         if (flags & l || flags & t || flags & u) {
@@ -148,6 +148,31 @@ t_sized_list *dir_init(DIR *dir, int flags)
     return sized_list;
 }
 
+void add_node(char *path, int flags, t_sized_list *list)
+{
+    t_dir_list *new = malloc(sizeof(t_dir_list));
+    new->path = path;
+    new->prev = NULL;
+    new->next = NULL;
+    if (flags & l || flags & t || flags & u) {
+        new->stat = malloc(sizeof(struct stat));
+        stat((const char *)path, new->stat);
+        if (new->stat->st_nlink > list->max_st_nlink)
+            list->max_st_nlink = new->stat->st_nlink;
+        if (new->stat->st_size > list->max_size)
+            list->max_size = new->stat->st_size;
+    }
+    if (!list->head) {
+        list->head = new;
+        list->tail = new;
+    } else {
+        new->prev = list->tail;
+        list->tail->next = new;
+        list->tail = list->tail->next;
+    }
+    list->list_size++;
+}
+
 void sort_by_name(t_sized_list *list)
 {
     t_dir_list *tmp = list->head;
@@ -155,10 +180,10 @@ void sort_by_name(t_sized_list *list)
     while (tmp) {
         tmp2 = tmp->next;
         while (tmp2) {
-            if (strcmp(tmp->dir->d_name, tmp2->dir->d_name) > 0) {
-                struct dirent *tmp_dir = tmp->dir;
-                tmp->dir = tmp2->dir;
-                tmp2->dir = tmp_dir;
+            if (strcmp(tmp->path, tmp2->path) > 0) {
+                char *swap = tmp->path;
+                tmp->path = tmp2->path;
+                tmp2->path = swap;
                 struct stat *tmp_stat = tmp->stat;
                 tmp->stat = tmp2->stat;
                 tmp2->stat = tmp_stat;
@@ -177,9 +202,9 @@ void sort_by_time(t_sized_list *list)
         tmp2 = tmp->next;
         while (tmp2) {
             if (tmp->stat->st_mtime < tmp2->stat->st_mtime) {
-                struct dirent *tmp_dir = tmp->dir;
-                tmp->dir = tmp2->dir;
-                tmp2->dir = tmp_dir;
+                char *swap = tmp->path;
+                tmp->path = tmp2->path;
+                tmp2->path = swap;
                 struct stat *tmp_stat = tmp->stat;
                 tmp->stat = tmp2->stat;
                 tmp2->stat = tmp_stat;

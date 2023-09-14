@@ -8,9 +8,10 @@
 #include <stdio.h>
 #include <time.h>
 #include <sys/stat.h>
+#include <sys/types.h>
 
 typedef struct s_dir_list {
-    struct dirent *dir;
+    char *path;
     struct stat *stat;
     struct s_dir_list *prev;
     struct s_dir_list *next;
@@ -25,6 +26,7 @@ typedef struct sized_list {
 }   t_sized_list;
 
 t_sized_list *dir_init(DIR *dir, int flags);
+void add_node(char *path, int flags, t_sized_list *list);
 
 /* Utility */
 void free_sized_list(t_sized_list *list);
