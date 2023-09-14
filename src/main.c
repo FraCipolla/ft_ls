@@ -92,6 +92,10 @@ void open_dir(char *path, int flags)
     t_dir_list *list = sized_list->head;
     if (flags & R) {
         while (list) {
+            if (!strncmp(list->path, "..", 2) || !strncmp(list->path, ".", 1)) {
+                list = list->next;
+                continue;
+            }
             char *new_path = malloc(sizeof(char) * (strlen(path) + strlen(list->path) + 2));
             strcpy(new_path, path);
             strcat(new_path, "/");
@@ -129,6 +133,8 @@ void check_args(char **argv, int flags, int argc)
     if (sized_list->list_size > 0)
         print(sized_list, flags);
     for (i = 0; path[i]; i++) {
+        if (sized_list->list_size > 0)
+            printf("\n");
         printf("%s:\n", path[i]);
         open_dir(path[i], flags);
     }

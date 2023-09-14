@@ -6,6 +6,14 @@ void print_dir_list(t_sized_list *list)
     t_dir_list *tmp = list->head;
     while (tmp) {
         printf("%s  ", tmp->path);
+        // t_dir_list *to_free = tmp;
+        // if (!opendir(tmp->path)) {
+        //     tmp->prev = tmp->next;
+        //     free(to_free->stat);
+        //     free(to_free);
+        // } else {
+        //     tmp = tmp->next;
+        // }
         tmp = tmp->next;
     }
     printf("\n");
