@@ -3,6 +3,7 @@
         "stdlib.h": "c",
         "dirent.h": "c",
         "array": "c",
-        "string_view": "c"
+        "string_view": "c",
+        "utils.h": "c"
     }
 }

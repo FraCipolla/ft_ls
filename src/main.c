@@ -82,35 +82,42 @@ void print(t_sized_list *sized_list, int flags)
 
 void open_dir(char *path, int flags)
 {
-    DIR *dir = opendir(path);
+    DIR *dir = NULL;
+    dir = opendir(path);
     if (!dir) {
         perror("ls");
         exit(errno);
     }
-    t_sized_list *sized_list = dir_init(dir, flags);
+    t_sized_list *sized_list = dir_init(dir, flags, path);
     print(sized_list, flags);
-    t_dir_list *list = sized_list->head;
     if (flags & R) {
+        t_dir_list *list = sized_list->head;
         while (list) {
             if (!strncmp(list->path, "..", 2) || !strncmp(list->path, ".", 1)) {
                 list = list->next;
                 continue;
             }
-            char *new_path = malloc(sizeof(char) * (strlen(path) + strlen(list->path) + 2));
+            char *new_path = NULL;
+            new_path = (char *)malloc(sizeof(char) * (ft_strlen(path) + ft_strlen(list->path) + 2));
+            if (!new_path) {
+                perror("ls");
+                exit(errno);
+            }
             strcpy(new_path, path);
             strcat(new_path, "/");
             strcat(new_path, list->path);
-            new_path[strlen(path) + strlen(list->path) + 1] = '\0';
+            new_path[ft_strlen(path) + ft_strlen(list->path) + 1] = '\0';
             DIR *dir = opendir(new_path);
             if (dir) {
                 printf("\n%s:\n", new_path);
                 open_dir(new_path, flags);
             }
             free(new_path);
+            closedir(dir);
             list = list->next;
         }
     }
-    closedir(dir);
+    free_sized_list(sized_list);
 }
 
 void check_args(char **argv, int flags, int argc)

@@ -9,10 +9,12 @@
 #include <time.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include "utils.h"
 
 typedef struct s_dir_list {
     char *path;
     struct stat *stat;
+    enum colors color;
     struct s_dir_list *prev;
     struct s_dir_list *next;
 }   t_dir_list;
@@ -21,11 +23,12 @@ typedef struct sized_list {
     unsigned int list_size;
     unsigned int max_st_nlink;
     unsigned int max_size;
+    unsigned int max_len;
     struct s_dir_list *head;
     struct s_dir_list *tail;
 }   t_sized_list;
 
-t_sized_list *dir_init(DIR *dir, int flags);
+t_sized_list *dir_init(DIR *dir, int flags, char *path);
 void add_node(char *path, int flags, t_sized_list *list);
 
 /* Utility */
@@ -36,5 +39,6 @@ void print_dir_list(t_sized_list *dir_list);
 void print_rev_dir_list(t_sized_list *list);
 void print_dir_list_l(t_sized_list *list);
 void print_rev_dir_list_l(t_sized_list *list);
+void free_dir_list(t_dir_list *list);
 
 #endif
