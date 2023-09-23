@@ -5,6 +5,9 @@
 void print_dir_list(t_sized_list *list)
 {
     t_dir_list *tmp = list->head;
+    if (!tmp) {
+        return;
+    }
     // unsigned int tmp_cols = get_cols();
     while (tmp) {
         // unsigned int curr_len = strlen(tmp->path);
@@ -32,8 +35,14 @@ void print_dir_list(t_sized_list *list)
         //     print_form("#%s\033[0m  ", GREEN, tmp->path);
         // else
         //     print_form("#%s\033[0m  ", WHITE, tmp->path);
-        printf("%s  ", tmp->path);
+        printf("%s", tmp->path);
         tmp = tmp->next;
+        if (tmp) {
+            if (isatty(1))
+                printf("  ");
+            else
+                printf("\n");
+        }
     }
     printf("\n");
 }
