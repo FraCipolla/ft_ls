@@ -4,30 +4,27 @@
 
 void print_permission(mode_t stat, enum colors *color)
 {
-    *color = WHITE;
+    char perm[10];
+    int i = 0;
     if (S_ISDIR(stat)) {
-        *color = BLUE;
-        print_form("d");
+        *color = blue;
+        perm[i++] = 'd';
     } else
-        print_form("-");
-    stat & S_IRUSR ? print_form("r") : print_form("-");
-    stat & S_IWUSR ? print_form("w") : print_form("-");
+        perm[i++] = '-';
+    if (stat & S_IRUSR) perm[i++] = 'r'; else perm[i++] = '-';
+    if (stat & S_IWUSR) perm[i++] = 'w'; else perm[i++] = '-';
     if (stat & S_IXUSR) {
-        *color = *color == BLUE ? BLUE : GREEN;
-        print_form("x");
+        *color = *color == blue ? blue : green;
+        perm[i++] = 'x';
     } else
-        print_form("-");
-    stat & S_IRGRP ? print_form("r") : print_form("-");
-    stat & S_IWGRP ? print_form("w") : print_form("-");
-    stat & S_IXGRP ? print_form("x") : print_form("-");
-    stat & S_IROTH ? print_form("r") : print_form("-");
-    stat & S_IWOTH ? print_form("w") : print_form("-");
-    stat & S_IXOTH ? print_form("x") : print_form("-");
-}
-
-void color_print(const char* str, int color)
-{
-    print_form("\033[1;%dm%s\033[0m", color, str);
+        perm[i++] = '-';
+    if (stat & S_IRGRP) perm[i++] = 'r'; else perm[i++] = '-';
+    if (stat & S_IWGRP) perm[i++] = 'w'; else perm[i++] = '-';
+    if (stat & S_IXGRP) perm[i++] = 'x'; else perm[i++] = '-';
+    if (stat & S_IROTH) perm[i++] = 'r'; else perm[i++] = '-';
+    if (stat & S_IWOTH) perm[i++] = 'w'; else perm[i++] = '-';
+    if (stat & S_IXOTH) perm[i++] = 'x'; else perm[i++] = '-';
+    write (1, perm, 10);
 }
 
 // void print_item(const char *str, int num_sp)
@@ -83,4 +80,32 @@ void ft_strdup(char **dest, const char *src)
 {
     *dest = malloc(sizeof(char) * (ft_strlen(src) + 1));
     strcpy(*dest, src);
+}
+
+void print_l(long int n)
+{
+    char c;
+    if (n < 0) {
+        write(1, "-", 1);
+        n *= -1;
+    }
+    if (n / 10) {
+        print_l(n / 10);
+    }
+    c = n % 10 + '0';
+    write(1, &c, 1);
+}
+
+void print_d(int n)
+{
+    char c;
+    if (n < 0) {
+        write(1, "-", 1);
+        n *= -1;
+    }
+    if (n / 10) {
+        print_d(n / 10);
+    }
+    c = n % 10 + '0';
+    write(1, &c, 1);
 }

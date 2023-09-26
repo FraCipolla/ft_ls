@@ -2,9 +2,17 @@
 #include "../include/utils.h"
 #include "../include/print_form.h"
 
+static const char *COL_ARR[] = { RESET, BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE };
+static const char *SPACES = "                                       ";
+
 void print_dir_list(t_sized_list *list)
 {
     t_dir_list *tmp = list->head;
+    char is_tty;
+    if (isatty(1))
+        is_tty = ' ';
+    else
+        is_tty = '\n';
     if (!tmp) {
         return;
     }
@@ -29,22 +37,17 @@ void print_dir_list(t_sized_list *list)
             tmp = tmp->next;
             continue;
         }
-        // if (tmp->stat && S_ISDIR(tmp->stat->st_mode))
-        //     print_form("#%s\033[0m  ", BLUE, tmp->path);
-        // else if (tmp->stat->st_mode & S_IXUSR)
-        //     print_form("#%s\033[0m  ", GREEN, tmp->path);
-        // else
-        //     print_form("#%s\033[0m  ", WHITE, tmp->path);
-        printf("%s", tmp->path);
+        if (tmp->stat && S_ISDIR(tmp->stat->st_mode))
+            COL_PRINT(COL_ARR[blue], tmp->path, COL_ARR[reset])
+        else if (tmp->stat->st_mode & S_IXUSR)
+            COL_PRINT(COL_ARR[green], tmp->path, COL_ARR[reset])
+        else
+            write(1, tmp->path, strlen(tmp->path));
         tmp = tmp->next;
-        if (tmp) {
-            if (isatty(1))
-                printf("  ");
-            else
-                printf("\n");
-        }
+        if (tmp)
+            write(1, &is_tty, 1);
     }
-    printf("\n");
+    write(1, "\n", 1);
 }
 
 void print_rev_dir_list(t_sized_list *list)
@@ -54,7 +57,7 @@ void print_rev_dir_list(t_sized_list *list)
         print_form("%s  ", tmp->path);
         tmp = tmp->prev;
     }
-    print_form("\n");
+    write(1, "\n", 1);
 }
 
 void print_dir_list_l(t_sized_list *list)
@@ -74,21 +77,23 @@ void print_dir_list_l(t_sized_list *list)
         unsigned int i = 0, j = tmp->stat->st_nlink;
         while (j /= 10)
             i++;
-        while (i++ < k)
-            print_form(" ");
-        print_form("%d ", tmp->stat->st_nlink);
+        // while (i++ < k)
+        //     print_form(" ");
+        write(1, SPACES, k - i);
         struct passwd *pw = getpwuid(tmp->stat->st_uid);
         struct group  *gr = getgrgid(tmp->stat->st_gid);
-        print_form("%s %s", pw->pw_name, gr->gr_name);
+        print_form("%d %s %s ", tmp->stat->st_nlink, pw->pw_name, gr->gr_name);
         i = 0, j = tmp->stat->st_size;
         while (j /= 10)
             i++;
-        while (i++ < n)
-            print_form(" ");
-        print_form("%d ", tmp->stat->st_size);
+        // while (i++ < n)
+        //     print_form(" ");
+        write(1, SPACES, n - i);
         char *time = ctime(&tmp->stat->st_mtime);
         time[16] = '\0';
-        print_form("%s #%s\033[0m\n", time + 4, tmp->color, tmp->path);
+        print_form("%d %s ", tmp->stat->st_size, time + 4);
+        COL_PRINT(COL_ARR[tmp->color], tmp->path, COL_ARR[reset]);
+        write(1, "\n", 1);
         tmp = tmp->next;
     }
 }
@@ -175,7 +180,7 @@ t_sized_list *dir_init(DIR *dir, int flags, char *path)
         t_dir_list *new = malloc(sizeof(t_dir_list));
         new->path = NULL;
         new->stat = NULL;
-        new->color = WHITE;
+        new->color = reset;
         ft_strdup(&new->path, entry->d_name);
         new->prev = NULL;
         new->next = NULL;
@@ -192,7 +197,6 @@ t_sized_list *dir_init(DIR *dir, int flags, char *path)
             exit(errno);
         }
         free(new_path);
-        // printf("entry->d_name: %s\n", entry->d_name);
         if (flags & l || flags & t || flags & u) {
             if (new->stat->st_nlink > sized_list->max_st_nlink)
                 sized_list->max_st_nlink = new->stat->st_nlink;

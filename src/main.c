@@ -109,7 +109,7 @@ void open_dir(char *path, int flags)
             new_path[ft_strlen(path) + ft_strlen(list->path) + 1] = '\0';
             DIR *dir = opendir(new_path);
             if (dir) {
-                printf("\n%s:\n", new_path);
+                print_form("\n%s:\n", new_path);
                 open_dir(new_path, flags);
             }
             free(new_path);
@@ -126,6 +126,10 @@ void check_args(char **argv, int flags, int argc)
     t_sized_list *sized_list = malloc(sizeof(t_sized_list));
     sized_list->list_size = 0;
     sized_list->max_st_nlink = 0;
+    sized_list->max_size = 0;
+    sized_list->max_len = 0;
+    sized_list->head = NULL;
+    sized_list->tail = NULL;
     int i = 0;
     while(*argv) {
         DIR *dir = opendir(*argv);
@@ -135,6 +139,7 @@ void check_args(char **argv, int flags, int argc)
             path[i++] = *argv;
         }
         argv++;
+        closedir(dir);
     }
     path[i] = NULL;
     if (sized_list->list_size > 0)

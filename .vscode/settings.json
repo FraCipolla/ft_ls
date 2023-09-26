@@ -4,6 +4,9 @@
         "dirent.h": "c",
         "array": "c",
         "string_view": "c",
-        "utils.h": "c"
+        "utils.h": "c",
+        "memory": "c",
+        "random": "c",
+        "stddef.h": "c"
     }
 }
