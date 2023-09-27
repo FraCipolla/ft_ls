@@ -26,6 +26,34 @@ void print_permission(mode_t stat, enum colors *color)
     if (stat & S_IXOTH) perm[i++] = 'x'; else perm[i++] = '-';
     write (1, perm, 10);
 }
+void set_permission(mode_t stat, enum colors *color, char (*perm)[11])
+{
+    int i = 0;
+    if (S_ISDIR(stat)) {
+        *color = blue;
+        (*perm)[i++] = 'd';
+    } else if (S_ISLNK(stat)) {
+        *color = cyan;
+        (*perm)[i++] = 'l';
+    } else 
+        (*perm)[i++] = '-';
+    if (stat & S_IRUSR) (*perm)[i++] = 'r'; else (*perm)[i++] = '-';
+    if (stat & S_IWUSR) (*perm)[i++] = 'w'; else (*perm)[i++] = '-';
+    if (stat & S_IXUSR) {
+        if (*color != cyan && *color != blue)
+            *color = green;
+
+        (*perm)[i++] = 'x';
+    } else
+        (*perm)[i++] = '-';
+    if (stat & S_IRGRP) (*perm)[i++] = 'r'; else (*perm)[i++] = '-';
+    if (stat & S_IWGRP) (*perm)[i++] = 'w'; else (*perm)[i++] = '-';
+    if (stat & S_IXGRP) (*perm)[i++] = 'x'; else (*perm)[i++] = '-';
+    if (stat & S_IROTH) (*perm)[i++] = 'r'; else (*perm)[i++] = '-';
+    if (stat & S_IWOTH) (*perm)[i++] = 'w'; else (*perm)[i++] = '-';
+    if (stat & S_IXOTH) (*perm)[i++] = 'x'; else (*perm)[i++] = '-';
+    (*perm)[i] = '\0';
+}
 
 // void print_item(const char *str, int num_sp)
 // {
@@ -59,7 +87,7 @@ int get_cols()
     return (cols);
 }
 
-size_t ft_strlen(const char *s)
+int ft_strlen(const char *s)
 {
     const char *p = s;
     while (*p)

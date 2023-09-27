@@ -14,15 +14,15 @@
 
 #include "print_form.h"
 
-#define RESET  "\033[0m"
-#define BLACK  "\033[30m"
-#define RED    "\033[31m"
-#define GREEN  "\033[32m"
-#define YELLOW "\033[33m"
-#define BLUE   "\033[34m"
-#define MAGENTA    "\033[35m"
-#define CYAN   "\033[36m"
-#define WHITE  "\033[37m"
+#define RESET  "\033[1;0m"
+#define BLACK  "\033[1;30m"
+#define RED    "\033[1;31m"
+#define GREEN  "\033[1;32m"
+#define YELLOW "\033[1;33m"
+#define BLUE   "\033[1;34m"
+#define MAGENTA    "\033[1;35m"
+#define CYAN   "\033[1;36m"
+#define WHITE  "\033[1;37m"
 
 #define PRINT_S(s) const char *p = s; while (*p) write(1, p++, 1);
 #define PRINT_D(x) print_d(x)
@@ -57,10 +57,11 @@ enum colors {
 };
 
 void print_permission(mode_t stat, enum colors *color);
+void set_permission(mode_t stat, enum colors *color, char (*perm)[11]);
 int get_cols();
 void print_item(const char *str, int num_sp);
 void color_print(const char* str, int color);
-size_t ft_strlen(const char *s);
+int ft_strlen(const char *s);
 int ft_strcmp(const char *s1, const char *s2);
 void ft_strdup(char **dest, const char *src);
 void print_arg(int n, ...);

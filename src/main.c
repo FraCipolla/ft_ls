@@ -60,23 +60,23 @@ int check_flags(char *s, int *flags)
     return 1;
 }
 
-void print(t_sized_list *sized_list, int flags)
+void print(t_sized_list **sized_list, int flags)
 {
     if (flags & t) {
-        sort_by_time(sized_list);
-    } else {
-        sort_by_name(sized_list);
+        sort_by_time(&(*sized_list));
+    } else if (!(flags & f)) {
+        sort_by_name(&(*sized_list));
     }
     if (flags & r) {
         if (flags & l) {
-            print_rev_dir_list_l(sized_list);
+            print_rev_dir_list_l(&(*sized_list));
         } else {
-            print_rev_dir_list(sized_list);
+            print_rev_dir_list(&(*sized_list));
         }
     } else if (flags & l) {
-        print_dir_list_l(sized_list);
+        print_dir_list_l(&(*sized_list));
     } else {
-        print_dir_list(sized_list);
+        print_dir_list(&(*sized_list), flags);
     }
 }
 
@@ -89,11 +89,11 @@ void open_dir(char *path, int flags)
         exit(errno);
     }
     t_sized_list *sized_list = dir_init(dir, flags, path);
-    print(sized_list, flags);
+    print(&sized_list, flags);
     if (flags & R) {
         t_dir_list *list = sized_list->head;
         while (list) {
-            if (!strncmp(list->path, "..", 2) || !strncmp(list->path, ".", 1)) {
+            if (!strcmp(list->path, "..") || !strcmp(list->path, ".")) {
                 list = list->next;
                 continue;
             }
@@ -108,7 +108,7 @@ void open_dir(char *path, int flags)
             strcat(new_path, list->path);
             new_path[ft_strlen(path) + ft_strlen(list->path) + 1] = '\0';
             DIR *dir = opendir(new_path);
-            if (dir) {
+            if (dir && (!S_ISLNK(list->stat.st_mode))) {
                 print_form("\n%s:\n", new_path);
                 open_dir(new_path, flags);
             }
@@ -134,7 +134,7 @@ void check_args(char **argv, int flags, int argc)
     while(*argv) {
         DIR *dir = opendir(*argv);
         if (!dir)
-            add_node(*argv, flags, sized_list);
+            add_node(*argv, flags, &sized_list);
         else {
             path[i++] = *argv;
         }
@@ -143,11 +143,11 @@ void check_args(char **argv, int flags, int argc)
     }
     path[i] = NULL;
     if (sized_list->list_size > 0)
-        print(sized_list, flags);
+        print(&sized_list, flags);
     for (i = 0; path[i]; i++) {
         if (sized_list->list_size > 0)
-            printf("\n");
-        printf("%s:\n", path[i]);
+            print_form("\n");
+        print_form("%s:\n", path[i]);
         open_dir(path[i], flags);
     }
     free_sized_list(sized_list);
@@ -164,7 +164,7 @@ int main(int argc, char *argv[])
     }
     if (j == 0) {
         if (flags & R) {
-            printf(".:\n");
+            print_form(".:\n");
         }
         open_dir(".", flags);
     } else {

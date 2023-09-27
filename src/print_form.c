@@ -1,7 +1,7 @@
 #include "../include/print_form.h"
 #include "../include/utils.h"
 
-void print_form(const char *form, ...)
+void  print_form(const char *form, ...)
 {
     va_list args;
     va_start(args, form);

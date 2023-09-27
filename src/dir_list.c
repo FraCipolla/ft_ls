@@ -5,20 +5,28 @@
 static const char *COL_ARR[] = { RESET, BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE };
 static const char *SPACES = "                                       ";
 
-void print_dir_list(t_sized_list *list)
+void print_dir_list(t_sized_list **list, int flags)
 {
-    t_dir_list *tmp = list->head;
-    char is_tty;
-    if (isatty(1))
-        is_tty = ' ';
-    else
-        is_tty = '\n';
-    if (!tmp) {
+    // unsigned int tmp_cols = get_cols();
+    t_dir_list *tmp = NULL;
+    if (!(tmp = (*list)->head)) {
         return;
     }
-    // unsigned int tmp_cols = get_cols();
+    int is_tty = isatty(1);
+    if (is_tty)
+        write(1, COL_ARR[tmp->color], 7);
     while (tmp) {
-        // unsigned int curr_len = strlen(tmp->path);
+        if (!is_tty) {
+            write(1, tmp->path, ft_strlen(tmp->path));
+            tmp = tmp->next;
+            if (tmp)
+                write(1, "\n", 1);
+            continue;
+        } 
+        if (!(flags & f) && tmp->prev && (tmp->color != tmp->prev->color)) {
+            write(1, COL_ARR[tmp->color], 7);
+        }
+        // unsigned int curr_len = ft_strlen(tmp->path);
         // if (curr_len > tmp_cols) {
         //     print_form("\n");
         //     tmp_cols = get_cols();
@@ -33,26 +41,19 @@ void print_dir_list(t_sized_list *list)
         // } else {
         //     tmp = tmp->next;
         // }
-        if (!tmp->path) {
-            tmp = tmp->next;
-            continue;
-        }
-        if (tmp->stat && S_ISDIR(tmp->stat->st_mode))
-            COL_PRINT(COL_ARR[blue], tmp->path, COL_ARR[reset])
-        else if (tmp->stat->st_mode & S_IXUSR)
-            COL_PRINT(COL_ARR[green], tmp->path, COL_ARR[reset])
-        else
-            write(1, tmp->path, strlen(tmp->path));
+        write(1, tmp->path, ft_strlen(tmp->path));
         tmp = tmp->next;
         if (tmp)
-            write(1, &is_tty, 1);
+            write(1, "  ", 2);
     }
+    if (is_tty)
+        write(1, RESET, 7);
     write(1, "\n", 1);
 }
 
-void print_rev_dir_list(t_sized_list *list)
+void print_rev_dir_list(t_sized_list **list)
 {
-    t_dir_list *tmp = list->tail;
+    t_dir_list *tmp = (*list)->tail;
     while (tmp) {
         print_form("%s  ", tmp->path);
         tmp = tmp->prev;
@@ -60,74 +61,70 @@ void print_rev_dir_list(t_sized_list *list)
     write(1, "\n", 1);
 }
 
-void print_dir_list_l(t_sized_list *list)
+void print_dir_list_l(t_sized_list **list)
 {
-    t_dir_list *tmp = list->head;
-    unsigned int k = 1, n = list->max_st_nlink;
+    t_dir_list *tmp = (*list)->head;
+    unsigned int k = 1, n = (*list)->max_st_nlink;
     while (n /= 10) {
         k++;
     }
-    unsigned int s = list->max_size;
+    unsigned int s = (*list)->max_size;
     n = 1;
     while (s /= 10) {
         n++;
     }
     while (tmp) {
-        print_permission(tmp->stat->st_mode, &tmp->color);
-        unsigned int i = 0, j = tmp->stat->st_nlink;
+        print_permission(tmp->stat.st_mode, &tmp->color);
+        unsigned int i = 0, j = tmp->stat.st_nlink;
         while (j /= 10)
             i++;
-        // while (i++ < k)
-        //     print_form(" ");
         write(1, SPACES, k - i);
-        struct passwd *pw = getpwuid(tmp->stat->st_uid);
-        struct group  *gr = getgrgid(tmp->stat->st_gid);
-        print_form("%d %s %s ", tmp->stat->st_nlink, pw->pw_name, gr->gr_name);
-        i = 0, j = tmp->stat->st_size;
+        struct passwd *pw = getpwuid(tmp->stat.st_uid);
+        struct group  *gr = getgrgid(tmp->stat.st_gid);
+        print_form("%d %s %s ", tmp->stat.st_nlink, pw->pw_name, gr->gr_name);
+        i = 0, j = tmp->stat.st_size;
         while (j /= 10)
             i++;
-        // while (i++ < n)
-        //     print_form(" ");
         write(1, SPACES, n - i);
-        char *time = ctime(&tmp->stat->st_mtime);
+        char *time = ctime(&tmp->stat.st_mtime);
         time[16] = '\0';
-        print_form("%d %s ", tmp->stat->st_size, time + 4);
+        print_form("%d %s ", tmp->stat.st_size, time + 4);
         COL_PRINT(COL_ARR[tmp->color], tmp->path, COL_ARR[reset]);
         write(1, "\n", 1);
         tmp = tmp->next;
     }
 }
 
-void print_rev_dir_list_l(t_sized_list *list)
+void print_rev_dir_list_l(t_sized_list **list)
 {
-    t_dir_list *tmp = list->tail;
-    unsigned int k = 1, n = list->max_st_nlink;
+    t_dir_list *tmp = (*list)->tail;
+    unsigned int k = 1, n = (*list)->max_st_nlink;
     while (n /= 10) {
         k++;
     }
-    unsigned int s = list->max_size;
+    unsigned int s = (*list)->max_size;
     n = 1;
     while (s /= 10) {
         n++;
     }
     while (tmp) {
-        print_permission(tmp->stat->st_mode, &tmp->color);
-        unsigned int i = 0, j = tmp->stat->st_nlink;
+        print_permission(tmp->stat.st_mode, &tmp->color);
+        unsigned int i = 0, j = tmp->stat.st_nlink;
         while (j /= 10)
             i++;
         while (i++ < k)
             print_form(" ");
-        print_form("%l ", tmp->stat->st_nlink);
-        struct passwd *pw = getpwuid(tmp->stat->st_uid);
-        struct group  *gr = getgrgid(tmp->stat->st_gid);
+        print_form("%l ", tmp->stat.st_nlink);
+        struct passwd *pw = getpwuid(tmp->stat.st_uid);
+        struct group  *gr = getgrgid(tmp->stat.st_gid);
         print_form("%s %s", pw->pw_name, gr->gr_name);
-        i = 0, j = tmp->stat->st_size;
+        i = 0, j = tmp->stat.st_size;
         while (j /= 10)
             i++;
         while (i++ < n)
             print_form(" ");
-        print_form("%l ", tmp->stat->st_size);
-        char *time = ctime(&tmp->stat->st_mtime);
+        print_form("%l ", tmp->stat.st_size);
+        char *time = ctime(&tmp->stat.st_mtime);
         time[16] = '\0';
         print_form("%s #%s\033[0m\n", time + 4, tmp->color, tmp->path);
         tmp = tmp->prev;
@@ -140,7 +137,6 @@ void free_sized_list(t_sized_list *list)
     while (list->head) {
         tmp = list->head;
         list->head = list->head->next;
-        free(tmp->stat);
         free(tmp->path);
         free(tmp);
     }
@@ -153,7 +149,6 @@ void free_dir_list(t_dir_list *list)
     while (list) {
         tmp = list;
         list = list->next;
-        free(tmp->stat);
         free(tmp->path);
         free(tmp);
     }
@@ -174,34 +169,35 @@ t_sized_list *dir_init(DIR *dir, int flags, char *path)
     while ((entry = readdir(dir))) {
         if (!entry) {
             break;
-        } else if ((entry->d_name[0] == '.' && !(flags & a) && !(flags & f)) || !strncmp(entry->d_name, "..", 2)) {
+        } else if ((!(strcmp(entry->d_name, ".")) && !(flags & a) && !(flags & f)) || (!strcmp(entry->d_name, "..") && !(flags & f) && !(flags & a))) {
             continue;
         }
         t_dir_list *new = malloc(sizeof(t_dir_list));
         new->path = NULL;
-        new->stat = NULL;
         new->color = reset;
         ft_strdup(&new->path, entry->d_name);
         new->prev = NULL;
         new->next = NULL;
-        new->stat = malloc(sizeof(struct stat));
-        sized_list->max_len = strlen(entry->d_name) > sized_list->max_len ? strlen(entry->d_name) : sized_list->max_len;
-        char *new_path = malloc(sizeof(char) * (strlen(path) + strlen(entry->d_name) + 2));
+        new->color = reset;
+        new->len = ft_strlen(entry->d_name);
+        sized_list->max_len = new->len > sized_list->max_len ? new->len : sized_list->max_len;
+        char *new_path = malloc(sizeof(char) * (ft_strlen(path) + new->len + 2));
         strcpy(new_path, path);
         strcat(new_path, "/");
         strcat(new_path, entry->d_name);
-        new_path[strlen(path) + strlen(entry->d_name) + 1] = '\0';
-        if (stat(new_path, new->stat) < 0) {
-            printf("entry: %s\n", entry->d_name);
+        new_path[ft_strlen(path) + new->len + 1] = '\0';
+        if (lstat(new_path, &new->stat) < 0) {
+            print_form("entry: %s\n", entry->d_name);
             perror("ls");
             exit(errno);
         }
+        set_permission(new->stat.st_mode, &new->color, &new->perm);
         free(new_path);
         if (flags & l || flags & t || flags & u) {
-            if (new->stat->st_nlink > sized_list->max_st_nlink)
-                sized_list->max_st_nlink = new->stat->st_nlink;
-            if (new->stat->st_size > sized_list->max_size)
-                sized_list->max_size = new->stat->st_size;
+            if (new->stat.st_nlink > sized_list->max_st_nlink)
+                sized_list->max_st_nlink = new->stat.st_nlink;
+            if (new->stat.st_size > sized_list->max_size)
+                sized_list->max_size = new->stat.st_size;
         }
         if (!list) {
             list = new;
@@ -219,46 +215,48 @@ t_sized_list *dir_init(DIR *dir, int flags, char *path)
     return sized_list;
 }
 
-void add_node(char *path, int flags, t_sized_list *list)
+void add_node(char *path, int flags, t_sized_list **list)
 {
     t_dir_list *new = malloc(sizeof(t_dir_list));
     ft_strdup(&new->path, path);
     new->prev = NULL;
     new->next = NULL;
-    list->max_len = strlen(path) > list->max_len ? strlen(path) : list->max_len;
+    (*list)->max_len = ft_strlen(path) > (*list)->max_len ? ft_strlen(path) : (*list)->max_len;
     if (flags & l || flags & t || flags & u) {
-        new->stat = malloc(sizeof(struct stat));
-        stat((const char *)path, new->stat);
-        if (new->stat->st_nlink > list->max_st_nlink)
-            list->max_st_nlink = new->stat->st_nlink;
-        if (new->stat->st_size > list->max_size)
-            list->max_size = new->stat->st_size;
+        lstat((const char *)path, &new->stat);
+        if (new->stat.st_nlink > (*list)->max_st_nlink)
+            (*list)->max_st_nlink = new->stat.st_nlink;
+        if (new->stat.st_size > (*list)->max_size)
+            (*list)->max_size = new->stat.st_size;
     }
-    if (!list->head) {
-        list->head = new;
-        list->tail = new;
+    if (!(*list)->head) {
+        (*list)->head = new;
+        (*list)->tail = new;
     } else {
-        new->prev = list->tail;
-        list->tail->next = new;
-        list->tail = list->tail->next;
+        new->prev = (*list)->tail;
+        (*list)->tail->next = new;
+        (*list)->tail = (*list)->tail->next;
     }
-    list->list_size++;
+    (*list)->list_size++;
 }
 
-void sort_by_name(t_sized_list *list)
+void sort_by_name(t_sized_list **list)
 {
-    t_dir_list *tmp = list->head;
-    t_dir_list *tmp2 = list->head;
+    t_dir_list *tmp = (*list)->head;
+    t_dir_list *tmp2 = (*list)->head;
     while (tmp) {
         tmp2 = tmp->next;
         while (tmp2) {
             if (tmp->path && tmp2->path && strcmp(tmp->path, tmp2->path) > 0) {
                 char *swap = tmp->path;
-                struct stat *swap_stat = tmp->stat;
+                struct stat swap_stat = tmp->stat;
+                enum colors swap_color = tmp->color;
                 tmp->path = tmp2->path;
                 tmp->stat = tmp2->stat;
                 tmp2->path = swap;
                 tmp2->stat = swap_stat;
+                tmp->color = tmp2->color;
+                tmp2->color = swap_color;
             }
             tmp2 = tmp2->next;
         }
@@ -266,16 +264,16 @@ void sort_by_name(t_sized_list *list)
     }
 }
 
-void sort_by_time(t_sized_list *list)
+void sort_by_time(t_sized_list **list)
 {
-    t_dir_list *tmp = list->head;
-    t_dir_list *tmp2 = list->head;
+    t_dir_list *tmp = (*list)->head;
+    t_dir_list *tmp2 = (*list)->head;
     while (tmp) {
         tmp2 = tmp->next;
         while (tmp2) {
-            if (tmp->stat->st_mtime < tmp2->stat->st_mtime) {
+            if (tmp->stat.st_mtime < tmp2->stat.st_mtime) {
                 char *swap = tmp->path;
-                struct stat *swap_stat = tmp->stat;
+                struct stat swap_stat = tmp->stat;
                 tmp->path = tmp2->path;
                 tmp->stat = tmp2->stat;
                 tmp2->path = swap;
