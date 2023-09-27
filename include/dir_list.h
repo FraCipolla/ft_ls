@@ -26,6 +26,7 @@ typedef struct sized_list {
     unsigned int max_st_nlink;
     int max_size;
     int max_len;
+    int total_len;
     struct s_dir_list *head;
     struct s_dir_list *tail;
 }   t_sized_list;

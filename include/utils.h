@@ -27,7 +27,7 @@
 #define PRINT_S(s) const char *p = s; while (*p) write(1, p++, 1);
 #define PRINT_D(x) print_d(x)
 #define PRINT_L(x) print_l(x)
-#define COL_PRINT(col, s, reset) {write(1, col, 5); write(1, s, ft_strlen(s)); write(1, reset, 5);}
+#define COL_PRINT(col, s, reset) {write(1, col, 7); write(1, s, ft_strlen(s)); write(1, reset, 7);}
 
 // static char PRINT_BUF[INT_MAX];
 // static int PRINT_BUF_INDEX = 0;
@@ -58,7 +58,7 @@ enum colors {
 
 void print_permission(mode_t stat, enum colors *color);
 void set_permission(mode_t stat, enum colors *color, char (*perm)[11]);
-int get_cols();
+struct winsize get_term_size();
 void print_item(const char *str, int num_sp);
 void color_print(const char* str, int color);
 int ft_strlen(const char *s);

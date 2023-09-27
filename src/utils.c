@@ -67,13 +67,11 @@ void set_permission(mode_t stat, enum colors *color, char (*perm)[11])
 //         write(1, &sp, 1);
 // }
 
-int get_cols()
+struct winsize get_term_size()
 {
     struct winsize ws;
     int fd;
-    int cols;
 
-    cols = 0;
     /* Open the controlling terminal. */
     fd = open("/dev/tty", O_RDWR);
     if (fd < 0)
@@ -83,8 +81,7 @@ int get_cols()
     if (ioctl(fd, TIOCGWINSZ, &ws) < 0)
         err(1, "/dev/tty");
     close(fd);
-    cols = ws.ws_col;
-    return (cols);
+    return ws;
 }
 
 int ft_strlen(const char *s)

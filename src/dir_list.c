@@ -7,7 +7,16 @@ static const char *SPACES = "                                       ";
 
 void print_dir_list(t_sized_list **list, int flags)
 {
-    // unsigned int tmp_cols = get_cols();
+    struct winsize ws = get_term_size();
+    int n_cols;
+    int n_rows;
+    if ((*list)->total_len < ws.ws_col) {
+        n_cols = 0;
+        n_rows = 1;
+    } else {
+        n_cols = (ws.ws_col / ((*list)->max_len) - 1);
+        n_rows = ((*list)->list_size / n_cols);
+    }
     t_dir_list *tmp = NULL;
     if (!(tmp = (*list)->head)) {
         return;
@@ -15,6 +24,9 @@ void print_dir_list(t_sized_list **list, int flags)
     int is_tty = isatty(1);
     if (is_tty)
         write(1, COL_ARR[tmp->color], 7);
+    int tmp_len = 0;
+    int offset = 0;
+    int curr_row = 0;
     while (tmp) {
         if (!is_tty) {
             write(1, tmp->path, ft_strlen(tmp->path));
@@ -26,25 +38,31 @@ void print_dir_list(t_sized_list **list, int flags)
         if (!(flags & f) && tmp->prev && (tmp->color != tmp->prev->color)) {
             write(1, COL_ARR[tmp->color], 7);
         }
-        // unsigned int curr_len = ft_strlen(tmp->path);
-        // if (curr_len > tmp_cols) {
-        //     print_form("\n");
-        //     tmp_cols = get_cols();
-        // }
-        // print_item(tmp->path, list->max_len - curr_len + 1);
-        // tmp_cols -= list->max_len + 1;
-        // t_dir_list *to_free = tmp;
-        // if (!opendir(tmp->path)) {
-        //     tmp->prev = tmp->next;
-        //     free(to_free->stat);
-        //     free(to_free);
-        // } else {
-        //     tmp = tmp->next;
-        // }
         write(1, tmp->path, ft_strlen(tmp->path));
+        if (ft_strlen(tmp->path) > tmp_len)
+            tmp_len = ft_strlen(tmp->path);
         tmp = tmp->next;
-        if (tmp)
+        if (tmp) {
             write(1, "  ", 2);
+            if (n_cols) {
+                if(curr_row++ < n_rows) {
+                    write(1, "\n", 1);
+                    if (offset)
+                        print_form("\033[%dC", offset);
+                }
+                if (curr_row == n_rows) {
+                    offset += tmp_len + 2;
+                    print_form("\033[%dA", n_rows);
+                    print_form("\033[%dD", ws.ws_col);
+                    print_form("\033[%dC", offset);
+                    tmp_len = 0;
+                    curr_row = 0;
+                }
+            }
+        } else if (n_cols) {
+            while (++curr_row < n_rows)
+                write(1, "\n", 1);
+        }
     }
     if (is_tty)
         write(1, RESET, 7);
@@ -161,6 +179,7 @@ t_sized_list *dir_init(DIR *dir, int flags, char *path)
     sized_list->max_st_nlink = 0;
     sized_list->max_size = 0;
     sized_list->max_len = 0;
+    sized_list->total_len = 0;
     sized_list->head = NULL;
     sized_list->tail = NULL;
     t_dir_list *list = NULL;
@@ -169,7 +188,7 @@ t_sized_list *dir_init(DIR *dir, int flags, char *path)
     while ((entry = readdir(dir))) {
         if (!entry) {
             break;
-        } else if ((!(strcmp(entry->d_name, ".")) && !(flags & a) && !(flags & f)) || (!strcmp(entry->d_name, "..") && !(flags & f) && !(flags & a))) {
+        } else if ((!(strncmp(entry->d_name, ".", 1)) && !(flags & a) && !(flags & f)) || (!strncmp(entry->d_name, "..", 2) && !(flags & f) && !(flags & a))) {
             continue;
         }
         t_dir_list *new = malloc(sizeof(t_dir_list));
@@ -180,6 +199,7 @@ t_sized_list *dir_init(DIR *dir, int flags, char *path)
         new->next = NULL;
         new->color = reset;
         new->len = ft_strlen(entry->d_name);
+        sized_list->total_len += new->len;
         sized_list->max_len = new->len > sized_list->max_len ? new->len : sized_list->max_len;
         char *new_path = malloc(sizeof(char) * (ft_strlen(path) + new->len + 2));
         strcpy(new_path, path);
