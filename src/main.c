@@ -71,7 +71,7 @@ void print(t_sized_list **sized_list, int flags)
         if (flags & l) {
             print_rev_dir_list_l(&(*sized_list));
         } else {
-            print_rev_dir_list(&(*sized_list));
+            print_rev_dir_list(&(*sized_list), flags);
         }
     } else if (flags & l) {
         print_dir_list_l(&(*sized_list));

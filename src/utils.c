@@ -2,31 +2,7 @@
 #include "../include/utils.h"
 #include "../include/print_form.h"
 
-void print_permission(mode_t stat, enum colors *color)
-{
-    char perm[10];
-    int i = 0;
-    if (S_ISDIR(stat)) {
-        *color = blue;
-        perm[i++] = 'd';
-    } else
-        perm[i++] = '-';
-    if (stat & S_IRUSR) perm[i++] = 'r'; else perm[i++] = '-';
-    if (stat & S_IWUSR) perm[i++] = 'w'; else perm[i++] = '-';
-    if (stat & S_IXUSR) {
-        *color = *color == blue ? blue : green;
-        perm[i++] = 'x';
-    } else
-        perm[i++] = '-';
-    if (stat & S_IRGRP) perm[i++] = 'r'; else perm[i++] = '-';
-    if (stat & S_IWGRP) perm[i++] = 'w'; else perm[i++] = '-';
-    if (stat & S_IXGRP) perm[i++] = 'x'; else perm[i++] = '-';
-    if (stat & S_IROTH) perm[i++] = 'r'; else perm[i++] = '-';
-    if (stat & S_IWOTH) perm[i++] = 'w'; else perm[i++] = '-';
-    if (stat & S_IXOTH) perm[i++] = 'x'; else perm[i++] = '-';
-    write (1, perm, 10);
-}
-void set_permission(mode_t stat, enum colors *color, char (*perm)[11])
+void set_permission(mode_t stat, enum colors *color, char (*perm)[10])
 {
     int i = 0;
     if (S_ISDIR(stat)) {
@@ -52,20 +28,7 @@ void set_permission(mode_t stat, enum colors *color, char (*perm)[11])
     if (stat & S_IROTH) (*perm)[i++] = 'r'; else (*perm)[i++] = '-';
     if (stat & S_IWOTH) (*perm)[i++] = 'w'; else (*perm)[i++] = '-';
     if (stat & S_IXOTH) (*perm)[i++] = 'x'; else (*perm)[i++] = '-';
-    (*perm)[i] = '\0';
 }
-
-// void print_item(const char *str, int num_sp)
-// {
-//     char sp = ' ';
-
-//     if (str[0] == '.')
-//         color_print(str, BLUE);
-//     else
-//         write(1, str, strlen(str));
-//     while (num_sp--)
-//         write(1, &sp, 1);
-// }
 
 struct winsize get_term_size()
 {

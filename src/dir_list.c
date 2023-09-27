@@ -15,7 +15,7 @@ void print_dir_list(t_sized_list **list, int flags)
         n_rows = 1;
     } else {
         n_cols = (ws.ws_col / ((*list)->max_len) - 1);
-        n_rows = ((*list)->list_size / n_cols);
+        n_rows = ((*list)->list_size / (n_cols + 1));
     }
     t_dir_list *tmp = NULL;
     if (!(tmp = (*list)->head)) {
@@ -69,14 +69,70 @@ void print_dir_list(t_sized_list **list, int flags)
     write(1, "\n", 1);
 }
 
-void print_rev_dir_list(t_sized_list **list)
+void print_rev_dir_list(t_sized_list **list, int flags)
 {
-    t_dir_list *tmp = (*list)->tail;
-    while (tmp) {
-        print_form("%s  ", tmp->path);
-        tmp = tmp->prev;
+    {
+    struct winsize ws = get_term_size();
+    int n_cols;
+    int n_rows;
+    if ((*list)->total_len < ws.ws_col) {
+        n_cols = 0;
+        n_rows = 1;
+    } else {
+        n_cols = (ws.ws_col / ((*list)->max_len) - 1);
+        n_rows = ((*list)->list_size / (n_cols + 1));
     }
+    t_dir_list *tmp = NULL;
+    if (!(tmp = (*list)->tail)) {
+        return;
+    }
+    int is_tty = isatty(1);
+    if (is_tty)
+        write(1, COL_ARR[tmp->color], 7);
+    int tmp_len = 0;
+    int offset = 0;
+    int curr_row = 0;
+    while (tmp) {
+        if (!is_tty) {
+            write(1, tmp->path, ft_strlen(tmp->path));
+            tmp = tmp->next;
+            if (tmp)
+                write(1, "\n", 1);
+            continue;
+        } 
+        if (!(flags & f) && tmp->prev && (tmp->color != tmp->prev->color)) {
+            write(1, COL_ARR[tmp->color], 7);
+        }
+        write(1, tmp->path, ft_strlen(tmp->path));
+        if (ft_strlen(tmp->path) > tmp_len)
+            tmp_len = ft_strlen(tmp->path);
+        tmp = tmp->prev;
+        if (tmp) {
+            write(1, "  ", 2);
+            if (n_cols) {
+                if(curr_row++ < n_rows) {
+                    write(1, "\n", 1);
+                    if (offset)
+                        print_form("\033[%dC", offset);
+                }
+                if (curr_row == n_rows) {
+                    offset += tmp_len + 2;
+                    print_form("\033[%dA", n_rows);
+                    print_form("\033[%dD", ws.ws_col);
+                    print_form("\033[%dC", offset);
+                    tmp_len = 0;
+                    curr_row = 0;
+                }
+            }
+        } else if (n_cols) {
+            while (++curr_row < n_rows)
+                write(1, "\n", 1);
+        }
+    }
+    if (is_tty)
+        write(1, RESET, 7);
     write(1, "\n", 1);
+}
 }
 
 void print_dir_list_l(t_sized_list **list)
@@ -91,15 +147,26 @@ void print_dir_list_l(t_sized_list **list)
     while (s /= 10) {
         n++;
     }
+    int max_pwlen = 0;
+    int max_grlen = 0;
+    print_form("total %d\n", (*list)->total_blocks / 2);
     while (tmp) {
-        print_permission(tmp->stat.st_mode, &tmp->color);
+        set_permission(tmp->stat.st_mode, &tmp->color, &tmp->perm);
+        write(1, tmp->perm, 10);
         unsigned int i = 0, j = tmp->stat.st_nlink;
         while (j /= 10)
             i++;
         write(1, SPACES, k - i);
         struct passwd *pw = getpwuid(tmp->stat.st_uid);
         struct group  *gr = getgrgid(tmp->stat.st_gid);
-        print_form("%d %s %s ", tmp->stat.st_nlink, pw->pw_name, gr->gr_name);
+        if (ft_strlen(pw->pw_name) > max_pwlen)
+            max_pwlen = ft_strlen(pw->pw_name);
+        if (ft_strlen(gr->gr_name) > max_grlen)
+            max_grlen = ft_strlen(gr->gr_name);
+        print_form("%d %s ", tmp->stat.st_nlink, pw->pw_name);
+        write(1, SPACES, max_pwlen - ft_strlen(pw->pw_name));
+        print_form("%s", gr->gr_name);
+        write(1, SPACES, max_grlen - ft_strlen(gr->gr_name));
         i = 0, j = tmp->stat.st_size;
         while (j /= 10)
             i++;
@@ -107,7 +174,11 @@ void print_dir_list_l(t_sized_list **list)
         char *time = ctime(&tmp->stat.st_mtime);
         time[16] = '\0';
         print_form("%d %s ", tmp->stat.st_size, time + 4);
-        COL_PRINT(COL_ARR[tmp->color], tmp->path, COL_ARR[reset]);
+        if (isatty(1)) {
+            COL_PRINT(COL_ARR[tmp->color], tmp->path, COL_ARR[reset]);
+        }
+        else 
+            write(1, tmp->path, ft_strlen(tmp->path));
         write(1, "\n", 1);
         tmp = tmp->next;
     }
@@ -125,8 +196,9 @@ void print_rev_dir_list_l(t_sized_list **list)
     while (s /= 10) {
         n++;
     }
+    print_form("total %d\n", (*list)->total_blocks / 2);
     while (tmp) {
-        print_permission(tmp->stat.st_mode, &tmp->color);
+        write(1, tmp->perm, 10);
         unsigned int i = 0, j = tmp->stat.st_nlink;
         while (j /= 10)
             i++;
@@ -161,17 +233,6 @@ void free_sized_list(t_sized_list *list)
     free(list);
 }
 
-void free_dir_list(t_dir_list *list)
-{
-    t_dir_list *tmp;
-    while (list) {
-        tmp = list;
-        list = list->next;
-        free(tmp->path);
-        free(tmp);
-    }
-}
-
 t_sized_list *dir_init(DIR *dir, int flags, char *path)
 {
     t_sized_list *sized_list = malloc(sizeof(t_sized_list));
@@ -180,6 +241,7 @@ t_sized_list *dir_init(DIR *dir, int flags, char *path)
     sized_list->max_size = 0;
     sized_list->max_len = 0;
     sized_list->total_len = 0;
+    sized_list->total_blocks = 0;
     sized_list->head = NULL;
     sized_list->tail = NULL;
     t_dir_list *list = NULL;
@@ -214,6 +276,7 @@ t_sized_list *dir_init(DIR *dir, int flags, char *path)
         set_permission(new->stat.st_mode, &new->color, &new->perm);
         free(new_path);
         if (flags & l || flags & t || flags & u) {
+            sized_list->total_blocks += new->stat.st_blocks;
             if (new->stat.st_nlink > sized_list->max_st_nlink)
                 sized_list->max_st_nlink = new->stat.st_nlink;
             if (new->stat.st_size > sized_list->max_size)
@@ -243,6 +306,7 @@ void add_node(char *path, int flags, t_sized_list **list)
     new->next = NULL;
     (*list)->max_len = ft_strlen(path) > (*list)->max_len ? ft_strlen(path) : (*list)->max_len;
     if (flags & l || flags & t || flags & u) {
+        (*list)->total_blocks += new->stat.st_blocks;
         lstat((const char *)path, &new->stat);
         if (new->stat.st_nlink > (*list)->max_st_nlink)
             (*list)->max_st_nlink = new->stat.st_nlink;
@@ -294,10 +358,13 @@ void sort_by_time(t_sized_list **list)
             if (tmp->stat.st_mtime < tmp2->stat.st_mtime) {
                 char *swap = tmp->path;
                 struct stat swap_stat = tmp->stat;
+                enum colors swap_color = tmp->color;
                 tmp->path = tmp2->path;
                 tmp->stat = tmp2->stat;
                 tmp2->path = swap;
                 tmp2->stat = swap_stat;
+                tmp->color = tmp2->color;
+                tmp2->color = swap_color;
             }
             tmp2 = tmp2->next;
         }

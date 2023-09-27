@@ -15,7 +15,7 @@ typedef struct s_dir_list {
     char *path;
     struct stat stat;
     enum colors color;
-    char perm[11];
+    char perm[10];
     int len;
     struct s_dir_list *prev;
     struct s_dir_list *next;
@@ -27,6 +27,7 @@ typedef struct sized_list {
     int max_size;
     int max_len;
     int total_len;
+    int total_blocks;
     struct s_dir_list *head;
     struct s_dir_list *tail;
 }   t_sized_list;
@@ -39,9 +40,8 @@ void free_sized_list(t_sized_list *list);
 void sort_by_name(t_sized_list **list);
 void sort_by_time(t_sized_list **list);
 void print_dir_list(t_sized_list **dir_list, int flags);
-void print_rev_dir_list(t_sized_list **list);
+void print_rev_dir_list(t_sized_list **list, int flags);
 void print_dir_list_l(t_sized_list **list);
 void print_rev_dir_list_l(t_sized_list **list);
-void free_dir_list(t_dir_list *list);
 
 #endif

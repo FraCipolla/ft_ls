@@ -56,8 +56,7 @@ enum colors {
     white
 };
 
-void print_permission(mode_t stat, enum colors *color);
-void set_permission(mode_t stat, enum colors *color, char (*perm)[11]);
+void set_permission(mode_t stat, enum colors *color, char (*perm)[10]);
 struct winsize get_term_size();
 void print_item(const char *str, int num_sp);
 void color_print(const char* str, int color);
