@@ -14,6 +14,7 @@
 #include <unistd.h>
 
 #include "print_form.h"
+#include "dir_list.h"
 
 #define RESET  "\033[1;0m"
 #define BLACK  "\033[1;30m"
@@ -25,7 +26,6 @@
 #define CYAN   "\033[1;36m"
 #define WHITE  "\033[1;37m"
 
-#define PRINT_S(s) const char *p = s; while (*p) write(1, p++, 1);
 #define PRINT_D(x) print_d(x)
 #define PRINT_L(x) print_l(x)
 #define COL_PRINT(col, s, reset) {write(1, col, 7); write(1, s, ft_strlen(s)); write(1, reset, 7);}
@@ -45,19 +45,7 @@ enum flags {
     d = 1 << 8, // 256
 };
 
-enum colors {
-    reset = 0,
-    black,
-    red,
-    green,
-    yellow,
-    blue,
-    magenta,
-    cyan,
-    white
-};
-
-void set_permission(mode_t stat, enum colors *color, char (*perm)[10]);
+void set_permission(t_dir_list **list);
 struct winsize get_term_size();
 int ft_strlen(const char *s);
 int ft_strcmp(const char *s1, const char *s2);

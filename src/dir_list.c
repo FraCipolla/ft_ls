@@ -169,7 +169,6 @@ void print_dir_list_l(t_sized_list **list, int flags)
     int max_grlen = 0;
     print_form("total %d\n", (*list)->total_blocks / 2);
     while (tmp) {
-        set_permission(tmp->stat.st_mode, &tmp->color, &tmp->perm);
         write(1, tmp->perm, 10);
         unsigned int i = 0, j = tmp->stat.st_nlink;
         while (j /= 10)
@@ -227,7 +226,6 @@ void print_rev_dir_list_l(t_sized_list **list, int flags)
     int max_grlen = 0;
     print_form("total %d\n", (*list)->total_blocks / 2);
     while (tmp) {
-        set_permission(tmp->stat.st_mode, &tmp->color, &tmp->perm);
         write(1, tmp->perm, 10);
         unsigned int i = 0, j = tmp->stat.st_nlink;
         while (j /= 10)
@@ -308,6 +306,7 @@ t_sized_list *dir_init(DIR *dir, int flags, char *path)
         new->prev = NULL;
         new->next = NULL;
         new->color = reset;
+        new->link = NULL;
         new->len = ft_strlen(entry->d_name);
         sized_list->total_len += new->len;
         sized_list->max_len = new->len > sized_list->max_len ? new->len : sized_list->max_len;
@@ -321,9 +320,9 @@ t_sized_list *dir_init(DIR *dir, int flags, char *path)
             perror("ls");
             exit(errno);
         }
-        set_permission(new->stat.st_mode, &new->color, &new->perm);
+        set_permission(&new);
         char *ext_attr = get_ext_attr(new_path);
-        if (ext_attr) {
+        if (ft_strlen(ext_attr) > 0) {
             new->color = magenta;
             free(ext_attr);
         }

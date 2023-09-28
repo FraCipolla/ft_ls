@@ -9,13 +9,25 @@
 #include <time.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include "utils.h"
+
+enum colors {
+    reset = 0,
+    black,
+    red,
+    green,
+    yellow,
+    blue,
+    magenta,
+    cyan,
+    white
+};
 
 typedef struct s_dir_list {
     char *path;
     struct stat stat;
     enum colors color;
-    char perm[10];
+    char *perm;
+    char *link;
     int len;
     struct s_dir_list *prev;
     struct s_dir_list *next;

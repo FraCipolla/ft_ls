@@ -1,6 +1,13 @@
 #include "../include/print_form.h"
 #include "../include/utils.h"
 
+void print_s(char *str)
+{
+    int i = 0;
+    while (str[i])
+        write(1, &str[i++], 1);
+}
+
 void  print_form(const char *form, ...)
 {
     va_list args;
@@ -12,7 +19,7 @@ void  print_form(const char *form, ...)
                 switch (c)
                 {
                 case 's':
-                    PRINT_S(va_arg(args, char *));
+                    print_s(va_arg(args, char *));
                     break;
                 case 'l':
                     print_l(va_arg(args, long int));

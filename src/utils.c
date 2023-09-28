@@ -2,39 +2,51 @@
 #include "../include/utils.h"
 #include "../include/print_form.h"
 
-void set_permission(mode_t stat, enum colors *color, char (*perm)[10])
+void set_permission(t_dir_list **list)
 {
+    mode_t stat = (*list).stat;
+    (*list)->perm = malloc(sizeof(char) * 10);
+    char *perm = (*list)->perm;
     int i = 0;
     if (S_ISDIR(stat)) {
-        *color = blue;
-        (*perm)[i++] = 'd';
+        (*list)->color = blue;
+        perm[i++] = 'd';
     } else if (S_ISLNK(stat)) {
-        *color = cyan;
-        (*perm)[i++] = 'l';
+        (*list)->color = cyan;
+        perm[i++] = 'l';
+        char tmp_buff[256];
+        int size = readlink((*list)->path, tmp_buff, 256);
+        if (size) {
+            char *buff = malloc(sizeof(char) * size + 1);
+            readlink((*list)->path, buff, size);
+            buff[size] = 0;
+            (*list)->link = buff;
+        }
     } else 
-        (*perm)[i++] = '-';
-    if (stat & S_IRUSR) (*perm)[i++] = 'r'; else (*perm)[i++] = '-';
-    if (stat & S_IWUSR) (*perm)[i++] = 'w'; else (*perm)[i++] = '-';
+        perm[i++] = '-';
+    if (stat & S_IRUSR) perm[i++] = 'r'; else perm[i++] = '-';
+    if (stat & S_IWUSR) perm[i++] = 'w'; else perm[i++] = '-';
     if (stat & S_IXUSR) {
-        if (*color != cyan && *color != blue)
-            *color = green;
+        if ((*list)->color != cyan && (*list)->color != blue)
+            (*list)->color = green;
 
-        (*perm)[i++] = 'x';
+        perm[i++] = 'x';
     } else
-        (*perm)[i++] = '-';
-    if (stat & S_IRGRP) (*perm)[i++] = 'r'; else (*perm)[i++] = '-';
-    if (stat & S_IWGRP) (*perm)[i++] = 'w'; else (*perm)[i++] = '-';
-    if (stat & S_IXGRP) (*perm)[i++] = 'x'; else (*perm)[i++] = '-';
-    if (stat & S_IROTH) (*perm)[i++] = 'r'; else (*perm)[i++] = '-';
-    if (stat & S_IWOTH) (*perm)[i++] = 'w'; else (*perm)[i++] = '-';
-    if (stat & S_IXOTH) (*perm)[i++] = 'x'; else (*perm)[i++] = '-';
-    (*perm)[i] = '\0';
+        perm[i++] = '-';
+    if (stat & S_IRGRP) perm[i++] = 'r'; else perm[i++] = '-';
+    if (stat & S_IWGRP) perm[i++] = 'w'; else perm[i++] = '-';
+    if (stat & S_IXGRP) perm[i++] = 'x'; else perm[i++] = '-';
+    if (stat & S_IROTH) perm[i++] = 'r'; else perm[i++] = '-';
+    if (stat & S_IWOTH) perm[i++] = 'w'; else perm[i++] = '-';
+    if (stat & S_IXOTH) perm[i++] = 'x'; else perm[i++] = '-';
+    perm[i] = '\0';
 }
 
 char *get_ext_attr(char *path)
 {
     char *buf, *key, *val;
     ssize_t buflen, keylen, vallen;
+    print_form("%s\n", path);
     buflen = listxattr(path, NULL, 0);
     if (buflen == -1) {
         perror("listxattr");
@@ -69,9 +81,8 @@ char *get_ext_attr(char *path)
                 perror("getxattr");
             } else {
                 val[vallen] = 0;
-                print_form("xattr: %s", val);
+                // print_form("xattr: %s", val);
             }
-            free(val);
         }
         keylen = strlen(key) + 1;
         buflen -= keylen;
