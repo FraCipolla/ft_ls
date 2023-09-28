@@ -38,6 +38,15 @@ void print_dir_list(t_sized_list **list, int flags)
         if (!(flags & f) && tmp->prev && (tmp->color != tmp->prev->color)) {
             write(1, COL_ARR[tmp->color], 7);
         }
+        if (ft_strchr(tmp->path, '$')) {
+            char *new_path = malloc(sizeof(char) * (ft_strlen(tmp->path) + 2));
+            new_path[0] = '\'';
+            strcpy(new_path + 1, tmp->path);
+            new_path[ft_strlen(tmp->path) + 1] = '\'';
+            new_path[ft_strlen(tmp->path) + 2] = '\0';
+            free(tmp->path);
+            tmp->path = new_path;
+        }
         write(1, tmp->path, ft_strlen(tmp->path));
         if (ft_strlen(tmp->path) > tmp_len)
             tmp_len = ft_strlen(tmp->path);
@@ -95,13 +104,22 @@ void print_rev_dir_list(t_sized_list **list, int flags)
     while (tmp) {
         if (!is_tty) {
             write(1, tmp->path, ft_strlen(tmp->path));
-            tmp = tmp->next;
+            tmp = tmp->prev;
             if (tmp)
                 write(1, "\n", 1);
             continue;
         } 
-        if (!(flags & f) && tmp->prev && (tmp->color != tmp->prev->color)) {
+        if (!(flags & f) && tmp->next && (tmp->color != tmp->next->color)) {
             write(1, COL_ARR[tmp->color], 7);
+        }
+        if (ft_strchr(tmp->path, '$')) {
+            char *new_path = malloc(sizeof(char) * (ft_strlen(tmp->path) + 2));
+            new_path[0] = '\'';
+            strcpy(new_path + 1, tmp->path);
+            new_path[ft_strlen(tmp->path) + 1] = '\'';
+            new_path[ft_strlen(tmp->path) + 2] = '\0';
+            free(tmp->path);
+            tmp->path = new_path;
         }
         write(1, tmp->path, ft_strlen(tmp->path));
         if (ft_strlen(tmp->path) > tmp_len)
@@ -132,10 +150,10 @@ void print_rev_dir_list(t_sized_list **list, int flags)
     if (is_tty)
         write(1, RESET, 7);
     write(1, "\n", 1);
-}
+    }
 }
 
-void print_dir_list_l(t_sized_list **list)
+void print_dir_list_l(t_sized_list **list, int flags)
 {
     t_dir_list *tmp = (*list)->head;
     unsigned int k = 1, n = (*list)->max_st_nlink;
@@ -157,23 +175,32 @@ void print_dir_list_l(t_sized_list **list)
         while (j /= 10)
             i++;
         write(1, SPACES, k - i);
-        struct passwd *pw = getpwuid(tmp->stat.st_uid);
+        print_form("%d ", tmp->stat.st_nlink);
+        if (!(flags & g)) {
+            struct passwd *pw = getpwuid(tmp->stat.st_uid);
+            if (ft_strlen(pw->pw_name) > max_pwlen)
+                max_pwlen = ft_strlen(pw->pw_name);
+            print_form("%s ", pw->pw_name);
+            write(1, SPACES, max_pwlen - ft_strlen(pw->pw_name));
+        }
         struct group  *gr = getgrgid(tmp->stat.st_gid);
-        if (ft_strlen(pw->pw_name) > max_pwlen)
-            max_pwlen = ft_strlen(pw->pw_name);
         if (ft_strlen(gr->gr_name) > max_grlen)
             max_grlen = ft_strlen(gr->gr_name);
-        print_form("%d %s ", tmp->stat.st_nlink, pw->pw_name);
-        write(1, SPACES, max_pwlen - ft_strlen(pw->pw_name));
         print_form("%s", gr->gr_name);
         write(1, SPACES, max_grlen - ft_strlen(gr->gr_name));
         i = 0, j = tmp->stat.st_size;
         while (j /= 10)
             i++;
         write(1, SPACES, n - i);
-        char *time = ctime(&tmp->stat.st_mtime);
-        time[16] = '\0';
-        print_form("%d %s ", tmp->stat.st_size, time + 4);
+        if (flags & u) {
+            char *time = ctime(&tmp->stat.st_atime);
+            time[16] = '\0';
+            print_form("%d %s ", tmp->stat.st_size, time + 4);
+        } else {
+            char *time = ctime(&tmp->stat.st_mtime);
+            time[16] = '\0';
+            print_form("%d %s ", tmp->stat.st_size, time + 4);
+        }
         if (isatty(1)) {
             COL_PRINT(COL_ARR[tmp->color], tmp->path, COL_ARR[reset]);
         }
@@ -184,7 +211,7 @@ void print_dir_list_l(t_sized_list **list)
     }
 }
 
-void print_rev_dir_list_l(t_sized_list **list)
+void print_rev_dir_list_l(t_sized_list **list, int flags)
 {
     t_dir_list *tmp = (*list)->tail;
     unsigned int k = 1, n = (*list)->max_st_nlink;
@@ -196,27 +223,48 @@ void print_rev_dir_list_l(t_sized_list **list)
     while (s /= 10) {
         n++;
     }
+    int max_pwlen = 0;
+    int max_grlen = 0;
     print_form("total %d\n", (*list)->total_blocks / 2);
     while (tmp) {
+        set_permission(tmp->stat.st_mode, &tmp->color, &tmp->perm);
         write(1, tmp->perm, 10);
         unsigned int i = 0, j = tmp->stat.st_nlink;
         while (j /= 10)
             i++;
-        while (i++ < k)
-            print_form(" ");
-        print_form("%l ", tmp->stat.st_nlink);
-        struct passwd *pw = getpwuid(tmp->stat.st_uid);
+        write(1, SPACES, k - i);
+        print_form("%d ", tmp->stat.st_nlink);
+        if (flags & g) {
+            struct passwd *pw = getpwuid(tmp->stat.st_uid);
+            if (ft_strlen(pw->pw_name) > max_pwlen)
+                max_pwlen = ft_strlen(pw->pw_name);
+            print_form("%s ", pw->pw_name);
+            write(1, SPACES, max_pwlen - ft_strlen(pw->pw_name));
+        }
         struct group  *gr = getgrgid(tmp->stat.st_gid);
-        print_form("%s %s", pw->pw_name, gr->gr_name);
+        if (ft_strlen(gr->gr_name) > max_grlen)
+            max_grlen = ft_strlen(gr->gr_name);
+        print_form("%s", gr->gr_name);
+        write(1, SPACES, max_grlen - ft_strlen(gr->gr_name));
         i = 0, j = tmp->stat.st_size;
         while (j /= 10)
             i++;
-        while (i++ < n)
-            print_form(" ");
-        print_form("%l ", tmp->stat.st_size);
-        char *time = ctime(&tmp->stat.st_mtime);
-        time[16] = '\0';
-        print_form("%s #%s\033[0m\n", time + 4, tmp->color, tmp->path);
+        write(1, SPACES, n - i);
+        if (flags & u) {
+            char *time = ctime(&tmp->stat.st_atime);
+            time[16] = '\0';
+            print_form("%d %s ", tmp->stat.st_size, time + 4);
+        } else {
+            char *time = ctime(&tmp->stat.st_mtime);
+            time[16] = '\0';
+            print_form("%d %s ", tmp->stat.st_size, time + 4);
+        }
+        if (isatty(1)) {
+            COL_PRINT(COL_ARR[tmp->color], tmp->path, COL_ARR[reset]);
+        }
+        else 
+            write(1, tmp->path, ft_strlen(tmp->path));
+        write(1, "\n", 1);
         tmp = tmp->prev;
     }
 }
@@ -274,8 +322,13 @@ t_sized_list *dir_init(DIR *dir, int flags, char *path)
             exit(errno);
         }
         set_permission(new->stat.st_mode, &new->color, &new->perm);
+        char *ext_attr = get_ext_attr(new_path);
+        if (ext_attr) {
+            new->color = magenta;
+            free(ext_attr);
+        }
         free(new_path);
-        if (flags & l || flags & t || flags & u) {
+        if (flags & l || flags & t || flags & u || flags & g) {
             sized_list->total_blocks += new->stat.st_blocks;
             if (new->stat.st_nlink > sized_list->max_st_nlink)
                 sized_list->max_st_nlink = new->stat.st_nlink;
@@ -305,7 +358,7 @@ void add_node(char *path, int flags, t_sized_list **list)
     new->prev = NULL;
     new->next = NULL;
     (*list)->max_len = ft_strlen(path) > (*list)->max_len ? ft_strlen(path) : (*list)->max_len;
-    if (flags & l || flags & t || flags & u) {
+    if (flags & l || flags & t || flags & u || flags & g) {
         (*list)->total_blocks += new->stat.st_blocks;
         lstat((const char *)path, &new->stat);
         if (new->stat.st_nlink > (*list)->max_st_nlink)
@@ -337,9 +390,9 @@ void sort_by_name(t_sized_list **list)
                 enum colors swap_color = tmp->color;
                 tmp->path = tmp2->path;
                 tmp->stat = tmp2->stat;
+                tmp->color = tmp2->color;
                 tmp2->path = swap;
                 tmp2->stat = swap_stat;
-                tmp->color = tmp2->color;
                 tmp2->color = swap_color;
             }
             tmp2 = tmp2->next;
@@ -355,15 +408,39 @@ void sort_by_time(t_sized_list **list)
     while (tmp) {
         tmp2 = tmp->next;
         while (tmp2) {
-            if (tmp->stat.st_mtime < tmp2->stat.st_mtime) {
+            if (difftime(tmp->stat.st_mtime, tmp2->stat.st_mtime) < 0) {
                 char *swap = tmp->path;
                 struct stat swap_stat = tmp->stat;
                 enum colors swap_color = tmp->color;
                 tmp->path = tmp2->path;
                 tmp->stat = tmp2->stat;
+                tmp->color = tmp2->color;
                 tmp2->path = swap;
                 tmp2->stat = swap_stat;
+                tmp2->color = swap_color;
+            }
+            tmp2 = tmp2->next;
+        }
+        tmp = tmp->next;
+    }
+}
+
+void sort_by_access_time(t_sized_list **list)
+{
+    t_dir_list *tmp = (*list)->head;
+    t_dir_list *tmp2 = (*list)->head;
+    while (tmp) {
+        tmp2 = tmp->next;
+        while (tmp2) {
+            if (difftime(tmp->stat.st_atime, tmp2->stat.st_atime) < 0) {
+                char *swap = tmp->path;
+                struct stat swap_stat = tmp->stat;
+                enum colors swap_color = tmp->color;
+                tmp->path = tmp2->path;
+                tmp->stat = tmp2->stat;
                 tmp->color = tmp2->color;
+                tmp2->path = swap;
+                tmp2->stat = swap_stat;
                 tmp2->color = swap_color;
             }
             tmp2 = tmp2->next;

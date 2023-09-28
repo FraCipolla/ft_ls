@@ -28,6 +28,57 @@ void set_permission(mode_t stat, enum colors *color, char (*perm)[10])
     if (stat & S_IROTH) (*perm)[i++] = 'r'; else (*perm)[i++] = '-';
     if (stat & S_IWOTH) (*perm)[i++] = 'w'; else (*perm)[i++] = '-';
     if (stat & S_IXOTH) (*perm)[i++] = 'x'; else (*perm)[i++] = '-';
+    (*perm)[i] = '\0';
+}
+
+char *get_ext_attr(char *path)
+{
+    char *buf, *key, *val;
+    ssize_t buflen, keylen, vallen;
+    buflen = listxattr(path, NULL, 0);
+    if (buflen == -1) {
+        perror("listxattr");
+        exit(EXIT_FAILURE);
+    }
+    if (buflen == 0) {
+        return NULL;
+    }
+    buf = malloc(buflen);
+    if (buf == NULL) {
+        perror("malloc");
+        exit(EXIT_FAILURE);
+    }
+    buflen = listxattr(path, buf, buflen);
+    if (buflen == -1) {
+        perror("listxattr");
+        exit(EXIT_FAILURE);
+    }
+    key = buf;
+    while (buflen > 0) {
+        vallen = getxattr(path, key, NULL, 0);
+        if (vallen == -1)
+            perror("getxattr");
+        if (vallen > 0) {
+            val = malloc(vallen + 1);
+            if (val == NULL) {
+                perror("malloc");
+                exit(EXIT_FAILURE);
+            }
+            vallen = getxattr(path, key, val, vallen);
+            if (vallen == -1) {
+                perror("getxattr");
+            } else {
+                val[vallen] = 0;
+                print_form("xattr: %s", val);
+            }
+            free(val);
+        }
+        keylen = strlen(key) + 1;
+        buflen -= keylen;
+        key += keylen;
+    }
+    free(buf);
+    return val;
 }
 
 struct winsize get_term_size()
@@ -96,4 +147,14 @@ void print_d(int n)
     }
     c = n % 10 + '0';
     write(1, &c, 1);
+}
+
+int ft_strchr(const char *s, int c)
+{
+    while (*s) {
+        if (*s == c)
+            return 1;
+        s++;
+    }
+    return 0;
 }

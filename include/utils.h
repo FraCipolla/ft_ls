@@ -6,6 +6,7 @@
 #include <sys/stat.h>
 #include <pwd.h>
 #include <grp.h>
+#include <sys/xattr.h>
 #include <sys/ioctl.h>  /* ioctl, TIOCGWINSZ */
 #include <err.h>    /* err */
 #include <fcntl.h>  /* open */
@@ -58,14 +59,12 @@ enum colors {
 
 void set_permission(mode_t stat, enum colors *color, char (*perm)[10]);
 struct winsize get_term_size();
-void print_item(const char *str, int num_sp);
-void color_print(const char* str, int color);
 int ft_strlen(const char *s);
 int ft_strcmp(const char *s1, const char *s2);
 void ft_strdup(char **dest, const char *src);
-void print_arg(int n, ...);
 void print_d(int n);
 void print_l(long int n);
-void write_and_clear(char **buffer, int *index);
+char *get_ext_attr(char *path);
+int ft_strchr(const char *s, int c);
 
 #endif

@@ -39,9 +39,10 @@ void add_node(char *path, int flags, t_sized_list **list);
 void free_sized_list(t_sized_list *list);
 void sort_by_name(t_sized_list **list);
 void sort_by_time(t_sized_list **list);
+void sort_by_access_time(t_sized_list **list);
 void print_dir_list(t_sized_list **dir_list, int flags);
 void print_rev_dir_list(t_sized_list **list, int flags);
-void print_dir_list_l(t_sized_list **list);
-void print_rev_dir_list_l(t_sized_list **list);
+void print_dir_list_l(t_sized_list **list, int flags);
+void print_rev_dir_list_l(t_sized_list **list, int flags);
 
 #endif

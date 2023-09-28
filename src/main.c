@@ -62,19 +62,21 @@ int check_flags(char *s, int *flags)
 
 void print(t_sized_list **sized_list, int flags)
 {
-    if (flags & t) {
+    if (flags & t && !(flags & u)) {
         sort_by_time(&(*sized_list));
+    } else if (((flags & u) && !(flags & l)) || (flags & u && flags & l && flags & t)) {
+        sort_by_access_time(&(*sized_list));
     } else if (!(flags & f)) {
         sort_by_name(&(*sized_list));
     }
     if (flags & r) {
-        if (flags & l) {
-            print_rev_dir_list_l(&(*sized_list));
+        if (flags & l || flags & g) {
+            print_rev_dir_list_l(&(*sized_list), flags);
         } else {
             print_rev_dir_list(&(*sized_list), flags);
         }
-    } else if (flags & l) {
-        print_dir_list_l(&(*sized_list));
+    } else if (flags & l || flags & g) {
+        print_dir_list_l(&(*sized_list), flags);
     } else {
         print_dir_list(&(*sized_list), flags);
     }
@@ -91,10 +93,17 @@ void open_dir(char *path, int flags)
     t_sized_list *sized_list = dir_init(dir, flags, path);
     print(&sized_list, flags);
     if (flags & R) {
-        t_dir_list *list = sized_list->head;
+        t_dir_list *list = NULL;
+        if (!(flags & r))
+            list = sized_list->head;
+        else
+            list = sized_list->tail;
         while (list) {
             if (!strcmp(list->path, "..") || !strcmp(list->path, ".")) {
-                list = list->next;
+                if (!(flags & r))
+                    list = list->next;
+                else
+                    list = list->prev;
                 continue;
             }
             char *new_path = NULL;
@@ -114,7 +123,10 @@ void open_dir(char *path, int flags)
             }
             free(new_path);
             closedir(dir);
-            list = list->next;
+            if (!(flags & r))
+                list = list->next;
+            else
+                list = list->prev;
         }
     }
     free_sized_list(sized_list);
