@@ -16,14 +16,6 @@ void set_permission(t_dir_list **list)
     } else if (S_ISLNK((*list)->stat->st_mode)) {
         (*list)->color = cyan;
         (*list)->perm[i++] = 'l';
-        char tmp_buff[256];
-        int size = readlink((*list)->path, tmp_buff, 256);
-        if (size) {
-            char *buff = malloc(sizeof(char) * size + 1);
-            buff[size] = 0;
-            readlink((*list)->path, buff, size);
-            (*list)->link = buff;
-        }
     } else 
         (*list)->perm[i++] = '-';
     if ((*list)->stat->st_mode & S_IRUSR) (*list)->perm[i++] = 'r'; else (*list)->perm[i++] = '-';
@@ -48,10 +40,10 @@ char *get_ext_attr(char *path)
 {
     char *buf, *key, *val;
     ssize_t buflen, keylen, vallen;
-    // pf("path %s\n", path);
+    // pf("path %s\n", path);xa
     buflen = listxattr(path, NULL, 0);
     if (buflen == -1) {
-        // perror("listxattr");
+        // perror(path);
         // exit(EXIT_FAILURE);
         return NULL;
     }
@@ -68,7 +60,7 @@ char *get_ext_attr(char *path)
         perror("listxattr");
         exit(EXIT_FAILURE);
     }
-    
+
     key = buf;
     while (buflen > 0) {
         vallen = getxattr(path, key, NULL, 0);
@@ -85,11 +77,10 @@ char *get_ext_attr(char *path)
                 perror("getxattr");
             } else {
                 val[vallen] = 0;
-                pf("xattr: %s", val);
+                // pf("xattr: %s", val);
             }
             free(val);
         }
-        pf("\n");
         keylen = strlen(key) + 1;
         buflen -= keylen;
         key += keylen;

@@ -8,14 +8,11 @@ static const char *SPACES = "                                       ";
 void print_dir_list(t_sized_list **list, int flags)
 {
     struct winsize ws = get_term_size();
-    int n_cols;
-    int n_rows;
-    if ((*list)->total_len < ws.ws_col) {
-        n_cols = 0;
-        n_rows = 1;
-    } else {
-        n_cols = (ws.ws_col / (((*list)->max_len) + (*list)->list_size * 2));
-        n_rows = ((*list)->list_size / (n_cols + 1));
+    int n_cols = 0;
+    int n_rows = 1;
+    if (((*list)->total_len + (*list)->list_size * 2) > ws.ws_col) {
+        n_cols = (ws.ws_col / ((*list)->max_len + 2));
+        n_rows += ((*list)->list_size / (n_cols));
     }
     t_dir_list *tmp = NULL;
     if (!(tmp = (*list)->head)) {
@@ -47,7 +44,6 @@ void print_dir_list(t_sized_list **list, int flags)
             free(tmp->path);
             tmp->path = new_path;
         }
-        // pf("path: %s", tmp->path);
         write(1, tmp->path, ft_strlen(tmp->path));
         if (ft_strlen(tmp->path) > tmp_len)
             tmp_len = ft_strlen(tmp->path);
@@ -83,14 +79,11 @@ void print_rev_dir_list(t_sized_list **list, int flags)
 {
     {
     struct winsize ws = get_term_size();
-    int n_cols;
-    int n_rows;
-    if ((*list)->total_len < ws.ws_col) {
-        n_cols = 0;
-        n_rows = 1;
-    } else {
-        n_cols = (ws.ws_col / ((*list)->max_len) - 1);
-        n_rows = ((*list)->list_size / (n_cols + 1));
+    int n_cols = 0;
+    int n_rows = 1;
+    if (((*list)->total_len + (*list)->list_size * 2) > ws.ws_col) {
+        n_cols = (ws.ws_col / ((*list)->max_len + 2));
+        n_rows += ((*list)->list_size / (n_cols));
     }
     t_dir_list *tmp = NULL;
     if (!(tmp = (*list)->tail)) {
@@ -266,6 +259,9 @@ void print_rev_dir_list_l(t_sized_list **list, int flags)
         }
         else 
             write(1, tmp->path, ft_strlen(tmp->path));
+        if (tmp->link) {
+            pf(" -> %s", tmp->link);
+        }
         write(1, "\n", 1);
         tmp = tmp->prev;
     }
@@ -273,15 +269,20 @@ void print_rev_dir_list_l(t_sized_list **list, int flags)
 
 void free_sized_list(t_sized_list *list)
 {
-    t_dir_list *tmp;
+    t_dir_list *tmp = NULL;
     while (list->head) {
         tmp = list->head;
         list->head = list->head->next;
-        free(tmp->perm);
-        free(tmp->stat);
-        free(tmp->path);
-        free(tmp->link);
-        free(tmp);
+        if (tmp->perm)
+            free(tmp->perm);
+        if (tmp->stat)
+            free(tmp->stat);
+        if (tmp->path)
+            free(tmp->path);
+        if (tmp->link)
+            free(tmp->link);
+        if (tmp)
+            free(tmp);
     }
     free(list);
 }
@@ -298,7 +299,7 @@ t_sized_list *dir_init(DIR *dir, int flags, char *path)
     sized_list->head = NULL;
     sized_list->tail = NULL;
     t_dir_list *list = NULL;
-    struct dirent *entry;
+    struct dirent *entry = NULL;
     unsigned int i = 0;
     while ((entry = readdir(dir))) {
         if (!entry) {
@@ -308,7 +309,6 @@ t_sized_list *dir_init(DIR *dir, int flags, char *path)
         }
         t_dir_list *new = malloc(sizeof(t_dir_list));
         new->path = NULL;
-        new->color = reset;
         ft_strdup(&new->path, entry->d_name);
         new->prev = NULL;
         new->next = NULL;
@@ -328,11 +328,19 @@ t_sized_list *dir_init(DIR *dir, int flags, char *path)
         strcat(new_path, entry->d_name);
         new_path[ft_strlen(path) + new->len + 1] = '\0';
         if (lstat(new_path, new->stat) < 0) {
-            pf("entry: %s\n", entry->d_name);
             perror("ls");
             exit(errno);
         }
         set_permission(&new);
+        if (S_ISLNK(new->stat->st_mode)) {
+            new->link = malloc(sizeof(char) * new->stat->st_size + 1);
+            if (!new->link) {
+                perror("malloc");
+                exit(EXIT_FAILURE);
+            }
+            new->link[new->stat->st_size] = 0;
+            readlink(new->path, new->link, new->stat->st_size);
+        }
         char *ext_attr = NULL;
         if (new->link) {
             char *path = getenv("HOME");
@@ -353,10 +361,10 @@ t_sized_list *dir_init(DIR *dir, int flags, char *path)
         }
         if (ext_attr && ft_strlen(ext_attr) > 0) {
             new->color = magenta;
-        }
-        if (ext_attr)
             free(ext_attr);
-        free(new_path);
+        }
+        if (new_path)
+            free(new_path);
         if (flags & l || flags & t || flags & u || flags & g) {
             sized_list->total_blocks += new->stat->st_blocks;
             if (new->stat->st_nlink > sized_list->max_st_nlink)
@@ -383,14 +391,54 @@ t_sized_list *dir_init(DIR *dir, int flags, char *path)
 void add_node(char *path, int flags, t_sized_list **list)
 {
     t_dir_list *new = malloc(sizeof(t_dir_list));
-    ft_strdup(&new->path, path);
-    set_permission(&new);
-    new->prev = NULL;
-    new->next = NULL;
+    new->path = NULL;
+        ft_strdup(&new->path, path);
+        new->prev = NULL;
+        new->next = NULL;
+        new->color = reset;
+        new->link = NULL;
+        new->len = ft_strlen(path);
+        new->stat = malloc(sizeof(struct stat));
+        if (!new->stat) {
+            perror("malloc");
+            exit(EXIT_FAILURE);
+        }
     (*list)->max_len = ft_strlen(path) > (*list)->max_len ? ft_strlen(path) : (*list)->max_len;
     if (flags & l || flags & t || flags & u || flags & g) {
         (*list)->total_blocks += new->stat->st_blocks;
         lstat((const char *)path, new->stat);
+        set_permission(&new);
+        if (S_ISLNK(new->stat->st_mode)) {
+            new->link = malloc(sizeof(char) * new->stat->st_size + 1);
+            if (!new->link) {
+                perror("malloc");
+                exit(EXIT_FAILURE);
+            }
+            new->link[new->stat->st_size] = 0;
+            readlink(new->path, new->link, new->stat->st_size);
+        }
+        char *ext_attr = NULL;
+        if (new->link) {
+            char *path = getenv("HOME");
+            int size = ft_strlen(path) + ft_strlen(new->link);
+            char *full_link = malloc(sizeof(char) * size + 1);
+            full_link[size] = 0;
+            size = 0;
+            int i = 0;
+            while (path[i])
+                full_link[size++] = path[i++];
+            i = 0;
+            while (new->link[i])
+                full_link[size++] = new->link[i++];
+            get_ext_attr(full_link);
+            free(full_link);
+        } else {
+            get_ext_attr(path);
+        }
+        if (ext_attr && ft_strlen(ext_attr) > 0) {
+            new->color = magenta;
+            free(ext_attr);
+        }
         if (new->stat->st_nlink > (*list)->max_st_nlink)
             (*list)->max_st_nlink = new->stat->st_nlink;
         if (new->stat->st_size > (*list)->max_size)
@@ -414,7 +462,6 @@ void sort_by_name(t_sized_list **list)
     while (tmp) {
         tmp2 = tmp->next;
         while (tmp2) {
-            
             if (tmp->path && tmp2->path && ft_comp_alph(tmp->path, tmp2->path) > 0) {
                 t_dir_list swap = *tmp;
                 swap.next = tmp2->next;
