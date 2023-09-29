@@ -24,8 +24,8 @@ enum colors {
 
 typedef struct s_dir_list {
     char *path;
-    struct stat stat;
-    enum colors color;
+    struct stat *stat;
+    int color;
     char *perm;
     char *link;
     int len;

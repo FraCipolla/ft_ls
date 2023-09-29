@@ -1,4 +1,4 @@
-#include "../include/print_form.h"
+#include "../include/pf.h"
 #include "../include/utils.h"
 
 void print_s(char *str)
@@ -8,7 +8,7 @@ void print_s(char *str)
         write(1, &str[i++], 1);
 }
 
-void  print_form(const char *form, ...)
+void  pf(const char *form, ...)
 {
     va_list args;
     va_start(args, form);
@@ -95,7 +95,7 @@ void  print_form(const char *form, ...)
 //     }
 // }
 
-// void print_form(char **buffer, int *index, const char *form,...)
+// void pf(char **buffer, int *index, const char *form,...)
 // {
 //     va_list args;
 //     va_start(args, form);

@@ -1,56 +1,59 @@
 #include "../include/dir_list.h"
 #include "../include/utils.h"
-#include "../include/print_form.h"
+#include "../include/pf.h"
 
 void set_permission(t_dir_list **list)
 {
-    mode_t stat = (*list).stat;
-    (*list)->perm = malloc(sizeof(char) * 10);
-    char *perm = (*list)->perm;
+    (*list)->perm = malloc(sizeof(char) * 11);
+    if (!(*list)->perm) {
+        perror("malloc");
+        exit(EXIT_FAILURE);
+    }
     int i = 0;
-    if (S_ISDIR(stat)) {
+    if (S_ISDIR((*list)->stat->st_mode)) {
         (*list)->color = blue;
-        perm[i++] = 'd';
-    } else if (S_ISLNK(stat)) {
+        (*list)->perm[i++] = 'd';
+    } else if (S_ISLNK((*list)->stat->st_mode)) {
         (*list)->color = cyan;
-        perm[i++] = 'l';
+        (*list)->perm[i++] = 'l';
         char tmp_buff[256];
         int size = readlink((*list)->path, tmp_buff, 256);
         if (size) {
             char *buff = malloc(sizeof(char) * size + 1);
-            readlink((*list)->path, buff, size);
             buff[size] = 0;
+            readlink((*list)->path, buff, size);
             (*list)->link = buff;
         }
     } else 
-        perm[i++] = '-';
-    if (stat & S_IRUSR) perm[i++] = 'r'; else perm[i++] = '-';
-    if (stat & S_IWUSR) perm[i++] = 'w'; else perm[i++] = '-';
-    if (stat & S_IXUSR) {
+        (*list)->perm[i++] = '-';
+    if ((*list)->stat->st_mode & S_IRUSR) (*list)->perm[i++] = 'r'; else (*list)->perm[i++] = '-';
+    if ((*list)->stat->st_mode & S_IWUSR) (*list)->perm[i++] = 'w'; else (*list)->perm[i++] = '-';
+    if ((*list)->stat->st_mode & S_IXUSR) {
         if ((*list)->color != cyan && (*list)->color != blue)
             (*list)->color = green;
 
-        perm[i++] = 'x';
+        (*list)->perm[i++] = 'x';
     } else
-        perm[i++] = '-';
-    if (stat & S_IRGRP) perm[i++] = 'r'; else perm[i++] = '-';
-    if (stat & S_IWGRP) perm[i++] = 'w'; else perm[i++] = '-';
-    if (stat & S_IXGRP) perm[i++] = 'x'; else perm[i++] = '-';
-    if (stat & S_IROTH) perm[i++] = 'r'; else perm[i++] = '-';
-    if (stat & S_IWOTH) perm[i++] = 'w'; else perm[i++] = '-';
-    if (stat & S_IXOTH) perm[i++] = 'x'; else perm[i++] = '-';
-    perm[i] = '\0';
+        (*list)->perm[i++] = '-';
+    if ((*list)->stat->st_mode & S_IRGRP) (*list)->perm[i++] = 'r'; else (*list)->perm[i++] = '-';
+    if ((*list)->stat->st_mode & S_IWGRP) (*list)->perm[i++] = 'w'; else (*list)->perm[i++] = '-';
+    if ((*list)->stat->st_mode & S_IXGRP) (*list)->perm[i++] = 'x'; else (*list)->perm[i++] = '-';
+    if ((*list)->stat->st_mode & S_IROTH) (*list)->perm[i++] = 'r'; else (*list)->perm[i++] = '-';
+    if ((*list)->stat->st_mode & S_IWOTH) (*list)->perm[i++] = 'w'; else (*list)->perm[i++] = '-';
+    if ((*list)->stat->st_mode & S_IXOTH) (*list)->perm[i++] = 'x'; else (*list)->perm[i++] = '-';
+    (*list)->perm[i] = '\0';
 }
 
 char *get_ext_attr(char *path)
 {
     char *buf, *key, *val;
     ssize_t buflen, keylen, vallen;
-    print_form("%s\n", path);
+    // pf("path %s\n", path);
     buflen = listxattr(path, NULL, 0);
     if (buflen == -1) {
-        perror("listxattr");
-        exit(EXIT_FAILURE);
+        // perror("listxattr");
+        // exit(EXIT_FAILURE);
+        return NULL;
     }
     if (buflen == 0) {
         return NULL;
@@ -81,15 +84,16 @@ char *get_ext_attr(char *path)
                 perror("getxattr");
             } else {
                 val[vallen] = 0;
-                // print_form("xattr: %s", val);
+                // pf("xattr: %s", val);
             }
+            free(val);
         }
         keylen = strlen(key) + 1;
         buflen -= keylen;
         key += keylen;
     }
     free(buf);
-    return val;
+    return NULL;
 }
 
 struct winsize get_term_size()
@@ -168,4 +172,23 @@ int ft_strchr(const char *s, int c)
         s++;
     }
     return 0;
+}
+
+int ft_comp_alph(char *s1, char *s2)
+{
+    int i = 0;
+    int j = 0;
+    char ch1;
+    char ch2;
+    while (s1[i] && s2[j]) {
+        ch1 = s1[i];
+        ch2 = s2[j];
+        if (ch1 >= 65 && ch1 <= 90) ch1 += 32;
+        if (ch2 >= 65 && ch2 <= 90) ch2 += 32;
+        if (ch1 != ch2)
+            break;
+        ++i;
+        ++j;
+    }
+    return (ch1 - ch2);
 }

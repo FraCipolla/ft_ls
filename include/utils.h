@@ -13,7 +13,7 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "print_form.h"
+#include "pf.h"
 #include "dir_list.h"
 
 #define RESET  "\033[1;0m"
@@ -54,5 +54,6 @@ void print_d(int n);
 void print_l(long int n);
 char *get_ext_attr(char *path);
 int ft_strchr(const char *s, int c);
+int ft_comp_alph(char *s1, char *s2);
 
 #endif

@@ -1,5 +1,5 @@
 NAME=ls
-SRC=main.c dir_list.c utils.c print_form.c
+SRC=main.c dir_list.c utils.c pf.c
 SRCDIR=src
 OBJ=$(SRC:%.c=$(SRCDIR)/%.o)
 CC=gcc

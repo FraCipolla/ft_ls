@@ -117,8 +117,8 @@ void open_dir(char *path, int flags)
             strcat(new_path, list->path);
             new_path[ft_strlen(path) + ft_strlen(list->path) + 1] = '\0';
             DIR *dir = opendir(new_path);
-            if (dir && (!S_ISLNK(list->stat.st_mode))) {
-                print_form("\n%s:\n", new_path);
+            if (dir && (!S_ISLNK(list->stat->st_mode))) {
+                pf("\n%s:\n", new_path);
                 open_dir(new_path, flags);
             }
             free(new_path);
@@ -158,8 +158,8 @@ void check_args(char **argv, int flags, int argc)
         print(&sized_list, flags);
     for (i = 0; path[i]; i++) {
         if (sized_list->list_size > 0)
-            print_form("\n");
-        print_form("%s:\n", path[i]);
+            pf("\n");
+        pf("%s:\n", path[i]);
         open_dir(path[i], flags);
     }
     free_sized_list(sized_list);
@@ -176,7 +176,7 @@ int main(int argc, char *argv[])
     }
     if (j == 0) {
         if (flags & R) {
-            print_form(".:\n");
+            pf(".:\n");
         }
         open_dir(".", flags);
     } else {
