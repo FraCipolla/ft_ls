@@ -68,6 +68,7 @@ char *get_ext_attr(char *path)
         perror("listxattr");
         exit(EXIT_FAILURE);
     }
+    
     key = buf;
     while (buflen > 0) {
         vallen = getxattr(path, key, NULL, 0);
@@ -84,10 +85,11 @@ char *get_ext_attr(char *path)
                 perror("getxattr");
             } else {
                 val[vallen] = 0;
-                // pf("xattr: %s", val);
+                pf("xattr: %s", val);
             }
             free(val);
         }
+        pf("\n");
         keylen = strlen(key) + 1;
         buflen -= keylen;
         key += keylen;
