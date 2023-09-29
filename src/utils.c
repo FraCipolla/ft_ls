@@ -180,6 +180,8 @@ int ft_comp_alph(char *s1, char *s2)
     int j = 0;
     char ch1;
     char ch2;
+    if (s1[i] == '.') i++;
+    if (s2[j] == '.') j++;
     while (s1[i] && s2[j]) {
         ch1 = s1[i];
         ch2 = s2[j];
