@@ -14,7 +14,7 @@ void print_dir_list(t_sized_list **list, int flags)
         n_cols = 0;
         n_rows = 1;
     } else {
-        n_cols = (ws.ws_col / ((*list)->max_len) - 1);
+        n_cols = (ws.ws_col / (((*list)->max_len) + (*list)->list_size * 2));
         n_rows = ((*list)->list_size / (n_cols + 1));
     }
     t_dir_list *tmp = NULL;
@@ -47,6 +47,7 @@ void print_dir_list(t_sized_list **list, int flags)
             free(tmp->path);
             tmp->path = new_path;
         }
+        // pf("path: %s", tmp->path);
         write(1, tmp->path, ft_strlen(tmp->path));
         if (ft_strlen(tmp->path) > tmp_len)
             tmp_len = ft_strlen(tmp->path);
@@ -417,7 +418,9 @@ void sort_by_name(t_sized_list **list)
             if (tmp->path && tmp2->path && ft_comp_alph(tmp->path, tmp2->path) > 0) {
                 t_dir_list swap = *tmp;
                 swap.next = tmp2->next;
+                swap.prev = tmp2->prev;
                 tmp2->next = tmp->next;
+                tmp2->prev = tmp->prev;
                 *tmp = *tmp2;
                 *tmp2 = swap;
             }
@@ -435,15 +438,13 @@ void sort_by_time(t_sized_list **list)
         tmp2 = tmp->next;
         while (tmp2) {
             if (difftime(tmp->stat->st_mtime, tmp2->stat->st_mtime) < 0) {
-                char *swap = tmp->path;
-                struct stat *swap_stat = tmp->stat;
-                enum colors swap_color = tmp->color;
-                tmp->path = tmp2->path;
-                tmp->stat = tmp2->stat;
-                tmp->color = tmp2->color;
-                tmp2->path = swap;
-                tmp2->stat = swap_stat;
-                tmp2->color = swap_color;
+                t_dir_list swap = *tmp;
+                swap.next = tmp2->next;
+                swap.prev = tmp2->prev;
+                tmp2->next = tmp->next;
+                tmp2->prev = tmp->prev;
+                *tmp = *tmp2;
+                *tmp2 = swap;
             }
             tmp2 = tmp2->next;
         }
@@ -459,15 +460,13 @@ void sort_by_access_time(t_sized_list **list)
         tmp2 = tmp->next;
         while (tmp2) {
             if (difftime(tmp->stat->st_atime, tmp2->stat->st_atime) < 0) {
-                char *swap = tmp->path;
-                struct stat *swap_stat = tmp->stat;
-                enum colors swap_color = tmp->color;
-                tmp->path = tmp2->path;
-                tmp->stat = tmp2->stat;
-                tmp->color = tmp2->color;
-                tmp2->path = swap;
-                tmp2->stat = swap_stat;
-                tmp2->color = swap_color;
+                t_dir_list swap = *tmp;
+                swap.next = tmp2->next;
+                swap.prev = tmp2->prev;
+                tmp2->next = tmp->next;
+                tmp2->prev = tmp->prev;
+                *tmp = *tmp2;
+                *tmp2 = swap;
             }
             tmp2 = tmp2->next;
         }
